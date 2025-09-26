@@ -16,11 +16,19 @@ export type Post = {
   userId: string;
   content: string;
   image?: string;
+  track?: {
+    trackId: number;
+    artistName: string;
+    trackName: string;
+    previewUrl: string;
+    artworkUrl100: string;
+  };
   likeCount: number;
   commentCount: number;
   repostCount: number;
   createdAt: number;
   likes?: Record<string, boolean>;
+  groupId?: string;
 };
 
 export type Comment = {
@@ -62,3 +70,39 @@ export type PlaylistTrack = FavoriteTrack & {
     playlistId: string;
     addedAt: any;
 }
+
+export type Connection = {
+    id: string; // Will be the other user's ID
+    status: 'pending' | 'accepted';
+    createdAt: number;
+};
+
+export type Group = {
+    id: string;
+    name: string;
+    description: string;
+    bannerUrl: string;
+    createdBy: string;
+    createdAt: number;
+    memberCount: number;
+};
+
+export type GroupMember = {
+    id: string; // Will be the user's ID
+    userId: string;
+    groupId: string;
+    joinedAt: number;
+};
+
+export type Call = {
+  id: string;
+  caller: User;
+  receiver: User;
+  type: 'audio' | 'video';
+  status: 'ringing' | 'active' | 'ended' | 'declined';
+  createdAt: any;
+  // offer?: any; // For WebRTC
+  // answer?: any; // For WebRTC
+}
+
+    

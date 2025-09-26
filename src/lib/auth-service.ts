@@ -27,7 +27,7 @@ async function storeUserInDatabase(user: User) {
         name: user.displayName || "New User",
         email: user.email,
         avatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-        username: isDeveloper ? 'orbit-developer' : username,
+        username: username,
         bio: "Just joined Orbit!",
         createdAt: serverTimestamp(),
         onboardingCompleted: false, // New field
@@ -59,20 +59,13 @@ export async function signOut() {
   }
 }
 
-export async function updateUserProfile(userId: string, data: { name?: string; username?: string; bio?: string; avatar?: string; coverPhoto?: string; onboardingCompleted?: boolean; role?: 'user' | 'moderator' | 'developer' }) {
+export async function updateUserProfile(userId: string, data: Partial<{ name: string; username: string; bio: string; avatar: string; coverPhoto: string; onboardingCompleted: boolean; role: 'user' | 'moderator' | 'developer' }>) {
     if(!db) throw new Error("Database not connected");
 
     const userRef = ref(db, 'users/' + userId);
     
-    // We only want to update fields that are provided.
-    const updateData: { [key: string]: any } = {};
-    if (data.name) updateData['name'] = data.name;
-    if (data.username) updateData['username'] = data.username;
-    if (data.bio) updateData['bio'] = data.bio;
-    if (data.avatar) updateData['avatar'] = data.avatar;
-    if (data.coverPhoto) updateData['coverPhoto'] = data.coverPhoto;
-    if (data.onboardingCompleted !== undefined) updateData['onboardingCompleted'] = data.onboardingCompleted;
-    if (data.role) updateData['role'] = data.role;
+    // Create an object with only the fields that are not undefined.
+    const updateData = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined));
 
 
     if (Object.keys(updateData).length === 0) {

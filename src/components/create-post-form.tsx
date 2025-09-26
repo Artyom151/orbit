@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -5,18 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useDatabase, useUser } from "@/firebase";
 import { ref, push, set, serverTimestamp } from "firebase/database";
-import { Image as ImageIcon, Music, X } from "lucide-react";
+import { Image as ImageIcon, Music, Play, X } from "lucide-react";
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
+import type { Track } from "@/lib/music-service";
+import { AttachMusicDialog } from "./posts/attach-music-dialog";
 
-export function CreatePostForm() {
+type CreatePostFormProps = {
+  groupId?: string;
+}
+
+export function CreatePostForm({ groupId }: CreatePostFormProps) {
   const { user } = useUser();
   const db = useDatabase();
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [attachedTrack, setAttachedTrack] = useState<Track | null>(null);
+  const [isMusicDialogOpen, setIsMusicDialogOpen] = useState(false);
 
   const { toast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -28,8 +37,6 @@ export function CreatePostForm() {
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-        // For now, we'll just show a preview. 
-        // In a real app, you'd upload this to Firebase Storage.
         const reader = new FileReader();
         reader.onloadend = () => {
             setImagePreview(reader.result as string);
@@ -40,7 +47,7 @@ export function CreatePostForm() {
   }
 
   const handlePost = async () => {
-    if ((!content.trim() && !imageFile) || !user || !db) return;
+    if ((!content.trim() && !imageFile && !attachedTrack) || !user || !db) return;
 
     setIsSubmitting(true);
     try {
@@ -50,19 +57,28 @@ export function CreatePostForm() {
 
       const postsRef = ref(db, "posts");
       const newPostRef = push(postsRef);
-      await set(newPostRef, {
+      
+      const postData: any = {
         userId: user.uid,
         content: content,
         image: imageUrl,
+        track: attachedTrack,
         likeCount: 0,
         repostCount: 0,
         commentCount: 0,
         createdAt: serverTimestamp(),
-      });
+      };
+      
+      if (groupId) {
+          postData.groupId = groupId;
+      }
+      
+      await set(newPostRef, postData);
 
       setContent("");
       setImagePreview(null);
       setImageFile(null);
+      setAttachedTrack(null);
 
       toast({
         title: "Success!",
@@ -79,8 +95,15 @@ export function CreatePostForm() {
       setIsSubmitting(false);
     }
   };
+  
+  const handleSelectTrack = (track: Track) => {
+    setAttachedTrack(track);
+    setIsMusicDialogOpen(false);
+  }
 
   return (
+    <>
+    <AttachMusicDialog open={isMusicDialogOpen} onOpenChange={setIsMusicDialogOpen} onSelectTrack={handleSelectTrack} />
     <div className="border-b border-border p-4">
       <div className="flex items-start gap-4">
         <Avatar className="h-12 w-12 border-none">
@@ -105,6 +128,19 @@ export function CreatePostForm() {
             </div>
           )}
 
+          {attachedTrack && (
+             <div className="relative border rounded-xl p-2 flex items-center gap-3">
+                <Image src={attachedTrack.artworkUrl100} alt={attachedTrack.trackName} width={48} height={48} className="rounded" />
+                <div className="min-w-0">
+                    <p className="font-bold truncate text-sm">{attachedTrack.trackName}</p>
+                    <p className="text-muted-foreground truncate text-xs">{attachedTrack.artistName}</p>
+                </div>
+                 <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => setAttachedTrack(null)}>
+                    <X className="size-4" />
+                 </Button>
+            </div>
+          )}
+
           <div className="flex justify-between items-center">
               <div className="flex gap-0 text-primary">
                   <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect}/>
@@ -112,17 +148,18 @@ export function CreatePostForm() {
                       <ImageIcon className="size-5" />
                       <span className="sr-only">Add image</span>
                   </Button>
-                   <Button variant="ghost" size="icon" className="text-primary hover:text-primary hover:bg-primary/10 transition-colors">
+                   <Button variant="ghost" size="icon" className="text-primary hover:text-primary hover:bg-primary/10 transition-colors" onClick={() => setIsMusicDialogOpen(true)}>
                       <Music className="size-5" />
                       <span className="sr-only">Add music</span>
                   </Button>
               </div>
-            <Button className="rounded-full font-bold" onClick={handlePost} disabled={isSubmitting || (!content.trim() && !imageFile)}>
+            <Button className="rounded-full font-bold" onClick={handlePost} disabled={isSubmitting || (!content.trim() && !imageFile && !attachedTrack)}>
               {isSubmitting ? "Posting..." : "Post"}
             </Button>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }

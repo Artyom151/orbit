@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Heart, MessageCircle, Repeat, Share, MoreHorizontal, Trash2, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Repeat, Share, MoreHorizontal, Trash2, Bookmark, Play } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useMusicPlayer } from "@/context/music-player-context";
 
 
 type PostCardProps = {
@@ -40,6 +41,8 @@ type PostCardProps = {
 
 
 const PostContent = ({ post }: { post: Post & { user: User } }) => {
+  const { selectTrack } = useMusicPlayer();
+
   const contentWithHashtags = useMemo(() => {
     return post.content.split(/(\s+)/).map((part, index) => {
       if (part.startsWith('#')) {
@@ -67,6 +70,23 @@ const PostContent = ({ post }: { post: Post & { user: User } }) => {
             data-ai-hint="social media post"
           />
         </div>
+      )}
+      {post.track && (
+        <Card 
+            className="mt-2 p-3 flex items-center gap-4 cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => selectTrack(post.track!, 0, [post.track!])}
+        >
+            <div className="relative h-20 w-20">
+                <Image src={post.track.artworkUrl100} alt={post.track.trackName} fill className="rounded-md object-cover" />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <Play className="text-white fill-white"/>
+                </div>
+            </div>
+            <div className="min-w-0">
+                <p className="font-bold truncate">{post.track.trackName}</p>
+                <p className="text-sm text-muted-foreground truncate">{post.track.artistName}</p>
+            </div>
+        </Card>
       )}
     </>
   );

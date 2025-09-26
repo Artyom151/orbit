@@ -6,13 +6,19 @@ import { PostCard } from "@/components/post-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDatabase, useUser } from "@/firebase";
-import { ref } from "firebase/database";
+import { ref, query, orderByChild, equalTo } from "firebase/database";
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useList } from "@/firebase/rtdb/use-list";
 import Link from "next/link";
 import type { Post, User } from "@/lib/types";
+
+type Status = {
+  id: string;
+  state: 'online' | 'offline';
+  last_changed: number;
+}
 
 const PostSkeleton = () => (
     <Card as="article" className="flex space-x-4 p-4 rounded-lg">
@@ -38,9 +44,16 @@ export default function DashboardPage() {
     if(!db) return null;
     return ref(db, "users");
   }, [db]);
+  
+  const statusQuery = useMemo(() => {
+    if(!db) return null;
+    return query(ref(db, "status"), orderByChild('state'), equalTo('online'));
+  }, [db]);
+
 
   const { data: postsData, loading: loadingPosts } = useList<Post>(postsQuery);
   const { data: usersData, loading: loadingUsers } = useList<User>(usersQuery);
+  const { data: onlineStatuses, loading: loadingStatuses } = useList<Status>(statusQuery);
   
   const postsWithUsers = useMemo(() => {
     if (!postsData || !usersData || postsData.length === 0 || usersData.length === 0) {
@@ -62,14 +75,14 @@ export default function DashboardPage() {
   }, [postsData, usersData]);
 
   const onlineUsers = useMemo(() => {
-    if(usersData.length > 0) {
-      // Show some users as "online"
-      return usersData.slice(0, 5);
+    if (!usersData.length || !onlineStatuses.length) {
+      return [];
     }
-    return [];
-  }, [usersData]);
+    const onlineUserIds = new Set(onlineStatuses.map(s => s.id));
+    return usersData.filter(user => onlineUserIds.has(user.id));
+  }, [usersData, onlineStatuses]);
 
-  const isLoading = loadingPosts || loadingUsers;
+  const isLoading = loadingPosts || loadingUsers || loadingStatuses;
 
   return (
     <div>
@@ -79,7 +92,7 @@ export default function DashboardPage() {
       <div className="p-4 border-b border-border">
           <p className="text-sm font-semibold text-primary mb-2">{onlineUsers.length > 0 ? `${onlineUsers.length} online` : 'Welcome'}</p>
           <div className="flex items-center -space-x-2">
-            {loadingUsers ? <p className="text-sm text-muted-foreground">Loading users...</p> : onlineUsers.map((user: User, index) => (
+            {isLoading ? <p className="text-sm text-muted-foreground">Loading users...</p> : onlineUsers.map((user: User, index) => (
               <Link href={`/dashboard/profile/${user.username}`} key={user.id}>
                 <Avatar className="h-12 w-12 border-2 border-background hover:scale-110 transition-transform duration-200" style={{ zIndex: onlineUsers.length - index }}>
                   <AvatarImage src={user.avatar} />
@@ -87,7 +100,7 @@ export default function DashboardPage() {
                 </Avatar>
               </Link>
             ))}
-            { !loadingUsers && onlineUsers.length === 0 && <p className="text-sm text-muted-foreground">Say hello to the community!</p>}
+            { !isLoading && onlineUsers.length === 0 && <p className="text-sm text-muted-foreground">Say hello to the community!</p>}
           </div>
         </div>
       <CreatePostForm />
@@ -134,3 +147,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -68,6 +69,20 @@
   }
 }
 
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
 .developer-badge {
     @apply inline-block rounded-full px-2 py-0.5 text-xs font-bold text-primary-foreground ml-2;
     background-image: linear-gradient(
@@ -95,3 +110,5 @@
     background-position: 0% 50%;
   }
 }
+
+    

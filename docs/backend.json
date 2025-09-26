@@ -50,6 +50,10 @@
                 "type": "string",
                 "description": "The ID of the user who created the post"
             },
+            "groupId": {
+                "type": "string",
+                "description": "The ID of the group this post belongs to, if any."
+            },
             "content": {
                 "type": "string",
                 "description": "The text content of the post"
@@ -58,6 +62,17 @@
                 "type": "string",
                 "format": "uri",
                 "description": "URL to an image attached to the post"
+            },
+            "track": {
+                "type": "object",
+                "description": "A music track attached to the post",
+                "properties": {
+                    "trackId": { "type": "number" },
+                    "artistName": { "type": "string" },
+                    "trackName": { "type": "string" },
+                    "previewUrl": { "type": "string", "format": "uri" },
+                    "artworkUrl100": { "type": "string", "format": "uri" }
+                }
             },
             "likeCount": {
                 "type": "number",
@@ -208,6 +223,90 @@
             "addedAt": { "type": "string", "format": "date-time" }
         },
         "required": ["playlistId", "userId", "trackId", "trackName", "artistName", "addedAt"]
+    },
+    "connection": {
+        "title": "Connection",
+        "description": "Represents a connection (friendship) between two users.",
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": ["pending", "accepted"],
+                "description": "The status of the connection request."
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time"
+            }
+        },
+        "required": ["status", "createdAt"]
+    },
+    "group": {
+        "title": "Group",
+        "description": "A user-created group or community.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "bannerUrl": { "type": "string", "format": "uri" },
+            "createdBy": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "memberCount": { "type": "number" }
+        },
+        "required": ["name", "createdBy", "createdAt"]
+    },
+    "groupMember": {
+        "title": "Group Member",
+        "description": "A record of a user being a member of a group.",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "groupId": { "type": "string" },
+            "joinedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "groupId", "joinedAt"]
+    },
+    "status": {
+      "title": "User Status",
+      "description": "Tracks the online/offline status of a user.",
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["online", "offline"]
+        },
+        "last_changed": {
+          "type": "number",
+          "description": "Timestamp of the last status change."
+        }
+      },
+      "required": ["state", "last_changed"]
+    },
+    "call": {
+      "title": "Call",
+      "description": "Represents a call between two users.",
+      "type": "object",
+      "properties": {
+        "caller": {
+          "$ref": "#/entities/user"
+        },
+        "receiver": {
+          "$ref": "#/entities/user"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["audio", "video"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ringing", "active", "ended", "declined"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["caller", "receiver", "type", "status", "createdAt"]
     }
   },
   "auth": {
@@ -267,6 +366,38 @@
             "$ref": "#/entities/playlistTrack"
         },
         "description": "Stores the tracks belonging to a specific playlist."
+    },
+    "/connections/{userId}/{otherUserId}": {
+        "schema": {
+            "$ref": "#/entities/connection"
+        },
+        "description": "Stores the connection status between two users."
+    },
+    "/groups/{groupId}": {
+        "schema": {
+            "$ref": "#/entities/group"
+        },
+        "description": "Stores all created groups."
+    },
+    "/groupMembers/{groupId}/{userId}": {
+        "schema": {
+            "$ref": "#/entities/groupMember"
+        },
+        "description": "Stores the members of a specific group."
+    },
+    "/status/{userId}": {
+      "schema": {
+        "$ref": "#/entities/status"
+      },
+      "description": "Tracks user online status for real-time presence."
+    },
+    "/calls/{callId}": {
+        "schema": {
+            "$ref": "#/entities/call"
+        },
+        "description": "Stores call signaling information between users."
     }
   }
 }
+
+    

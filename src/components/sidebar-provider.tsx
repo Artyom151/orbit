@@ -1,24 +1,25 @@
 
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 type SidebarContextType = {
-  isCollapsed: boolean;
-  toggleSidebar: () => void;
+  isLeftSidebarCollapsed: boolean;
+  toggleLeftSidebar: () => void;
 };
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsCollapsed(prev => !prev);
-  };
+  const toggleLeftSidebar = useCallback(() => {
+    setIsLeftSidebarCollapsed(prev => !prev);
+  }, []);
+  
 
   return (
-    <SidebarContext.Provider value={{ isCollapsed, toggleSidebar }}>
+    <SidebarContext.Provider value={{ isLeftSidebarCollapsed, toggleLeftSidebar }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -31,3 +32,5 @@ export function useSidebar() {
   }
   return context;
 }
+
+    

@@ -30,7 +30,7 @@ export function MusicPlayer() {
         toggleCurrentTrackFavorite
     } = useMusicPlayer();
 
-    const isMusicPage = pathname === '/dashboard/music';
+    const isMusicPage = pathname?.startsWith('/dashboard/music');
     
     const formatTime = (seconds: number) => {
         if (isNaN(seconds) || seconds === Infinity) {

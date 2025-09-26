@@ -1,21 +1,22 @@
+
 'use client';
 
-import { Bell, Bookmark, Compass, Home, Mail, MoreHorizontal, User, PanelLeftClose, PanelLeftOpen, Music, Library, Loader2, Moon, Sun, Menu } from "lucide-react";
+import { Bell, Bookmark, Compass, Home, Mail, MoreHorizontal, User, PanelLeftClose, PanelLeftOpen, Music, Library, Loader2, Moon, Sun, Menu, Users, Newspaper } from "lucide-react";
 import Link from "next/link";
-import { RightSidebar } from "@/components/right-sidebar";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-provider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
-import { useUser } from "@/firebase";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useUser, useDatabase } from "@/firebase";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { signOut } from "@/lib/auth-service";
 import { Logo } from "@/components/logo";
 import { MusicPlayer } from "@/components/music-player";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { onValue, ref, serverTimestamp, set, onDisconnect } from "firebase/database";
 
 
 function MobileSidebar() {
@@ -43,15 +44,20 @@ function MobileSidebar() {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="lg:hidden">
-          <Menu className="size-6"/>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+            <AvatarFallback>{userInitial}</AvatarFallback>
+          </Avatar>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 p-4 flex flex-col">
-        <div className="p-2 mb-4">
-          <h1 className="text-2xl font-bold">Orbit</h1>
-        </div>
+      <SheetContent side="left" className="w-72 p-0 flex flex-col">
+        <SheetHeader className="p-4 border-b">
+           <SheetTitle>
+              <h1 className="text-xl font-bold">Orbit</h1>
+           </SheetTitle>
+        </SheetHeader>
         
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1 p-4">
           <NavLink href="/dashboard">
               <Home className="size-6 shrink-0" />
               <span>Home</span>
@@ -68,6 +74,14 @@ function MobileSidebar() {
               <Mail className="size-6 shrink-0" />
               <span>Messages</span>
           </NavLink>
+           <NavLink href="/dashboard/connections">
+              <Users className="size-6 shrink-0" />
+              <span>Connections</span>
+          </NavLink>
+           <NavLink href="/dashboard/groups">
+              <Newspaper className="size-6 shrink-0" />
+              <span>Groups</span>
+          </NavLink>
           <NavLink href="/dashboard/music">
               <Music className="size-6 shrink-0" />
               <span>Music</span>
@@ -82,7 +96,7 @@ function MobileSidebar() {
           </NavLink>
         </nav>
         
-        <div className="mt-auto">
+        <div className="mt-auto p-4 border-t">
           {user.username && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -110,16 +124,7 @@ function MobileSidebar() {
                 <DropdownMenuItem onClick={handleLogout}>
                     Log out @{user.username}
                 </DropdownMenuItem>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span className="ml-2">Theme</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <ThemeToggle />
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
+                <ThemeToggle />
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -131,7 +136,7 @@ function MobileSidebar() {
 
 
 function DashboardSidebar() {
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isLeftSidebarCollapsed, toggleLeftSidebar } = useSidebar();
   const { user } = useUser();
   
   const handleLogout = async () => {
@@ -148,69 +153,83 @@ function DashboardSidebar() {
   return (
     <aside className={cn(
       "hidden lg:flex flex-col border-r border-border p-4 transition-all duration-300 ease-in-out",
-      isCollapsed ? "w-20 items-center" : "w-72"
+      isLeftSidebarCollapsed ? "w-20 items-center" : "w-72"
     )}>
         <div className={cn(
           "flex items-center p-2 mb-4",
-          isCollapsed ? "justify-center" : "justify-between"
+          isLeftSidebarCollapsed ? "justify-center" : "justify-between"
         )}>
-          {!isCollapsed && <h1 className="text-2xl font-bold">Orbit</h1>}
-          <Button variant="ghost" size="icon" className="rounded-full bg-background border hover:bg-secondary" onClick={toggleSidebar}>
-              {isCollapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+          {!isLeftSidebarCollapsed && <h1 className="text-2xl font-bold">Orbit</h1>}
+          <Button variant="ghost" size="icon" className="rounded-full bg-background border hover:bg-secondary" onClick={toggleLeftSidebar}>
+              {isLeftSidebarCollapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           </Button>
         </div>
         
         <nav className="flex flex-col gap-1 text-lg">
             <Link href="/dashboard" className={cn(
               "flex items-center gap-4 p-3 rounded-full font-bold hover:bg-secondary transition-colors",
-              isCollapsed && "justify-center"
+              isLeftSidebarCollapsed && "justify-center"
             )}>
                 <Home className="size-6 shrink-0" />
-                {!isCollapsed && <span>Home</span>}
+                {!isLeftSidebarCollapsed && <span>Home</span>}
             </Link>
             <Link href="/dashboard/explore" className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
-              isCollapsed && "justify-center"
+              isLeftSidebarCollapsed && "justify-center"
             )}>
                 <Compass className="size-6 shrink-0" />
-                {!isCollapsed && <span>Explore</span>}
+                {!isLeftSidebarCollapsed && <span>Explore</span>}
             </Link>
             <Link href="/dashboard/notifications" className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
-              isCollapsed && "justify-center"
+              isLeftSidebarCollapsed && "justify-center"
             )}>
                 <Bell className="size-6 shrink-0" />
-                {!isCollapsed && <span>Notifications</span>}
+                {!isLeftSidebarCollapsed && <span>Notifications</span>}
             </Link>
             <Link href="/dashboard/messages" className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
-              isCollapsed && "justify-center"
+              isLeftSidebarCollapsed && "justify-center"
             )}>
                 <Mail className="size-6 shrink-0" />
-                {!isCollapsed && <span>Messages</span>}
+                {!isLeftSidebarCollapsed && <span>Messages</span>}
+            </Link>
+            <Link href="/dashboard/connections" className={cn(
+              "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
+              isLeftSidebarCollapsed && "justify-center"
+            )}>
+                <Users className="size-6 shrink-0" />
+                {!isLeftSidebarCollapsed && <span>Connections</span>}
+            </Link>
+             <Link href="/dashboard/groups" className={cn(
+              "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
+              isLeftSidebarCollapsed && "justify-center"
+            )}>
+                <Newspaper className="size-6 shrink-0" />
+                {!isLeftSidebarCollapsed && <span>Groups</span>}
             </Link>
              <Link href="/dashboard/music" className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
-              isCollapsed && "justify-center"
+              isLeftSidebarCollapsed && "justify-center"
             )}>
                 <Music className="size-6 shrink-0" />
-                {!isCollapsed && <span>Music</span>}
+                {!isLeftSidebarCollapsed && <span>Music</span>}
             </Link>
             <Link href="/dashboard/bookmarks" className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
-              isCollapsed && "justify-center"
+              isLeftSidebarCollapsed && "justify-center"
             )}>
                 <Bookmark className="size-6 shrink-0" />
-                {!isCollapsed && <span>Bookmarks</span>}
+                {!isLeftSidebarCollapsed && <span>Bookmarks</span>}
             </Link>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button className={cn(
                       "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors w-full text-left",
-                      isCollapsed && "justify-center"
+                      isLeftSidebarCollapsed && "justify-center"
                     )}>
                         <MoreHorizontal className="size-6 shrink-0" />
-                        {!isCollapsed && <span>More</span>}
+                        {!isLeftSidebarCollapsed && <span>More</span>}
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
@@ -220,10 +239,10 @@ function DashboardSidebar() {
 
             <Link href={`/dashboard/profile/${username}`} className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
-              isCollapsed && "justify-center"
+              isLeftSidebarCollapsed && "justify-center"
             )}>
                 <User className="size-6 shrink-0" />
-                {!isCollapsed && <span>Profile</span>}
+                {!isLeftSidebarCollapsed && <span>Profile</span>}
             </Link>
         </nav>
         <div className="mt-auto">
@@ -234,18 +253,18 @@ function DashboardSidebar() {
                   variant="ghost" 
                   className={cn(
                     "relative h-auto w-full p-2 justify-start text-left rounded-full",
-                    isCollapsed && "w-auto justify-center"
+                    isLeftSidebarCollapsed && "w-auto justify-center"
                   )}
                 >
                     <div className={cn(
                       "flex items-center justify-between w-full",
-                      isCollapsed ? "justify-center" : "gap-3"
+                      isLeftSidebarCollapsed ? "justify-center" : "gap-3"
                     )}>
                         <Avatar className="h-10 w-10">
                             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
                             <AvatarFallback>{userInitial}</AvatarFallback>
                         </Avatar>
-                        {!isCollapsed && (
+                        {!isLeftSidebarCollapsed && (
                           <>
                             <div className="flex flex-col">
                                 <span className="font-bold">{user.displayName}</span>
@@ -272,6 +291,41 @@ function DashboardSidebar() {
   );
 }
 
+const PAGE_TITLES: { [key: string]: string } = {
+  '/dashboard': 'Home',
+  '/dashboard/explore': 'Explore',
+  '/dashboard/notifications': 'Notifications',
+  '/dashboard/messages': 'Messages',
+  '/dashboard/connections': 'Connections',
+  '/dashboard/groups': 'Groups',
+  '/dashboard/music': 'Music',
+  '/dashboard/bookmarks': 'Bookmarks',
+};
+
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { user } = useUser();
+  const pageTitle = PAGE_TITLES[pathname] || '';
+
+  return (
+    <div className="flex min-h-screen">
+      <DashboardSidebar />
+      <main className="flex-1 flex w-full">
+        <div className="w-full lg:max-w-2xl border-x-0 lg:border-x border-border">
+           <div className="p-2 border-b border-border flex items-center justify-between lg:hidden sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <div className="flex items-center gap-4">
+              <MobileSidebar />
+               <h1 className="text-xl font-bold">{pageTitle}</h1>
+            </div>
+          </div>
+          {children}
+        </div>
+      </main>
+      <MusicPlayer />
+    </div>
+  );
+}
+
 
 export default function DashboardLayout({
   children,
@@ -280,7 +334,8 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useUser();
   const router = useRouter();
-
+  const db = useDatabase();
+  
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
@@ -289,6 +344,35 @@ export default function DashboardLayout({
         router.push('/onboarding');
     }
   }, [user, loading, router]);
+  
+  useEffect(() => {
+    if (!user || !db) return;
+
+    const userStatusDatabaseRef = ref(db, '/status/' + user.uid);
+    const amOnline = ref(db, '.info/connected');
+
+    const unsubscribe = onValue(amOnline, (snapshot) => {
+        if (snapshot.val() === false) {
+            set(userStatusDatabaseRef, {
+                state: 'offline',
+                last_changed: serverTimestamp(),
+            });
+            return;
+        }
+
+        onDisconnect(userStatusDatabaseRef).set({
+            state: 'offline',
+            last_changed: serverTimestamp(),
+        }).then(() => {
+            set(userStatusDatabaseRef, {
+                state: 'online',
+                last_changed: serverTimestamp(),
+            });
+        });
+    });
+
+    return () => unsubscribe();
+  }, [user, db]);
 
   if (loading || !user?.username || !user?.onboardingCompleted) {
     return (
@@ -303,22 +387,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
-          <DashboardSidebar />
-          <main className="flex-1 flex w-full">
-             <div className="w-full lg:max-w-2xl border-x-0 lg:border-x border-border">
-              <div className="p-2 border-b border-border flex items-center gap-4 lg:hidden sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-                  <MobileSidebar />
-                  <h1 className="text-xl font-bold">Home</h1>
-              </div>
-              {children}
-            </div>
-            <div className="hidden xl:block">
-              <RightSidebar />
-            </div>
-          </main>
-      </div>
-      <MusicPlayer />
+      <LayoutContent>{children}</LayoutContent>
     </SidebarProvider>
   );
 }

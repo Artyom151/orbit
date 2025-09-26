@@ -110,13 +110,13 @@ export default function DashboardPage() {
           <TabsTrigger value="following" className="rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent">Following</TabsTrigger>
         </TabsList>
         <TabsContent value="foryou">
-           <div className="space-y-4 p-4">
+           <div className="space-y-4">
             {isLoading ? (
-                <>
+                <div className="p-4 space-y-4">
                     <PostSkeleton />
                     <PostSkeleton />
                     <PostSkeleton />
-                </>
+                </div>
             ) : 
               postsWithUsers.length > 0 ? (
                 postsWithUsers.map((post) => (
@@ -129,13 +129,13 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
          <TabsContent value="following">
-           <div className="space-y-4 p-4">
+           <div className="space-y-4">
             {isLoading ? (
-                <>
+                <div className="p-4 space-y-4">
                     <PostSkeleton />
                     <PostSkeleton />
                     <PostSkeleton />
-                </>
+                </div>
             ):
               postsWithUsers.filter((p) => p.userId !== authUser?.uid).map((post) => (
                 <PostCard key={post.id} post={post} />
@@ -147,5 +147,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

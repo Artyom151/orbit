@@ -30,7 +30,7 @@ export function MusicPlayer() {
         toggleCurrentTrackFavorite
     } = useMusicPlayer();
 
-    const isMusicPage = pathname?.startsWith('/dashboard/music');
+    const isMusicPage = pathname === '/dashboard/music';
     
     const formatTime = (seconds: number) => {
         if (isNaN(seconds) || seconds === Infinity) {
@@ -47,7 +47,7 @@ export function MusicPlayer() {
 
     if (isMusicPage) {
         return (
-             <div className="fixed bottom-0 left-0 right-0 z-20">
+             <div className="fixed bottom-0 left-0 right-0 z-50">
                 <div className="bg-card/80 backdrop-blur-lg border-t border-border animate-fade-in-up">
                     <Slider 
                         value={[progress]} 
@@ -107,7 +107,7 @@ export function MusicPlayer() {
 
     // Mini player for other pages
     return (
-        <div className="fixed bottom-4 right-4 z-20">
+        <div className="fixed bottom-4 right-4 z-50">
              <div className="bg-card/90 backdrop-blur-lg border border-border p-3 flex items-center gap-2 animate-fade-in-up rounded-lg shadow-2xl w-80 sm:w-96">
                 <Image src={currentTrack.artworkUrl100} alt={currentTrack.trackName} width={48} height={48} className="rounded" unoptimized />
                 <div className='flex-1 min-w-0'>

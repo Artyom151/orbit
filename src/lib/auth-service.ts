@@ -13,15 +13,16 @@ import { ref, set, get, serverTimestamp, update } from "firebase/database";
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+const DEVELOPER_USERNAMES = ['nevermoreanarchy', 'orbit-developer'];
+
 async function storeUserInDatabase(user: User) {
   const userRef = ref(db, 'users/' + user.uid);
   const userSnap = await get(userRef);
+  const username = user.email?.split('@')[0] || `user_${Date.now()}`;
+  const isDeveloper = DEVELOPER_USERNAMES.includes(username);
 
   if (!userSnap.exists()) {
     // User is new, create a new record
-    const username = user.email?.split('@')[0] || `user_${Date.now()}`;
-    const isDeveloper = user.email === 'developer@orbit.com';
-
     try {
       await set(userRef, {
         name: user.displayName || "New User",
@@ -36,8 +37,17 @@ async function storeUserInDatabase(user: User) {
     } catch (error) {
       console.error("Failed to store user in database:", error);
     }
+  } else {
+    // User exists, check if their role needs to be updated
+    const userData = userSnap.val();
+    if (isDeveloper && userData.role !== 'developer') {
+        try {
+            await update(userRef, { role: 'developer' });
+        } catch (error) {
+            console.error("Failed to update user role:", error);
+        }
+    }
   }
-  // If user exists, we can optionally update their info here if needed
 }
 
 export async function signInWithGoogle() {

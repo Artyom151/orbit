@@ -244,7 +244,7 @@ export function PostCard({ post }: PostCardProps) {
   const canDelete = authUser?.uid === post.userId || authUser?.role === 'developer' || authUser?.role === 'moderator';
 
   return (
-    <Card as="article" className="flex flex-col p-4 rounded-lg animate-fade-in-up">
+    <Card as="article" className="flex flex-col p-4 rounded-none border-x-0 border-t-0 border-b animate-fade-in-up">
       <CommentDialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen} post={post} />
       
       <div className="flex space-x-4">
@@ -269,37 +269,40 @@ export function PostCard({ post }: PostCardProps) {
                   </span>
               </div>
               
-            {canDelete && (
-              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="size-5 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="size-5 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {canDelete && (
+                  <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                     <AlertDialogTrigger asChild>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
                         <Trash2 className="mr-2 size-4" />
                         Delete
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete this post and all its comments.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Delete</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete this post and all its comments.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                <DropdownMenuItem>Not interested in this post</DropdownMenuItem>
+                <DropdownMenuItem>Follow @{post.user.username}</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
           </div>
           
            <PostContent post={post}/>

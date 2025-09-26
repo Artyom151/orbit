@@ -110,8 +110,11 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
     };
     
     const handleDeleteComment = async (commentId: string) => {
-        if (!db) return;
+        if (!db || !authUser) return;
         
+        const canDelete = authUser.uid === commentId || authUser.role === 'developer' || authUser.role === 'moderator';
+        if (!canDelete) return;
+
         try {
             const commentRef = ref(db, `comments/${post.id}/${commentId}`);
             await remove(commentRef);
@@ -214,7 +217,7 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
                                                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                                             </span>
                                         </div>
-                                        {authUser?.uid === comment.userId && (
+                                        {(authUser?.uid === comment.userId || authUser?.role === 'developer' || authUser?.role === 'moderator') && (
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">

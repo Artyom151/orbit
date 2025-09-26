@@ -312,7 +312,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       <DashboardSidebar />
       <main className="flex-1 flex w-full">
         <div className="w-full lg:max-w-2xl border-x-0 lg:border-x border-border">
-           <div className="p-2 border-b border-border flex items-center justify-between lg:hidden sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+           <div className="p-2 border-b border-border flex items-center justify-between lg:hidden sticky top-0 bg-background/80 backdrop-blur-sm z-30">
             <div className="flex items-center gap-4">
               <MobileSidebar />
                <h1 className="text-xl font-bold">{pageTitle}</h1>

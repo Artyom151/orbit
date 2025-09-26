@@ -1,0 +1,272 @@
+
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address"
+        },
+        "avatar": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the user's avatar image"
+        },
+        "username": {
+            "type": "string",
+            "description": "The user's unique username"
+        },
+        "bio": {
+            "type": "string",
+            "description": "A short user bio"
+        },
+        "coverPhoto": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the user's cover photo"
+        },
+        "role": {
+            "type": "string",
+            "description": "The role of the user in the application",
+            "enum": ["user", "moderator", "developer"]
+        }
+      },
+      "required": ["name", "email", "username"]
+    },
+    "post": {
+        "title": "Post",
+        "description": "A post created by a user",
+        "type": "object",
+        "properties": {
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who created the post"
+            },
+            "content": {
+                "type": "string",
+                "description": "The text content of the post"
+            },
+            "image": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to an image attached to the post"
+            },
+            "likeCount": {
+                "type": "number",
+                "description": "Number of likes the post has received"
+            },
+            "commentCount": {
+                "type": "number",
+                "description": "Number of comments on the post"
+            },
+            "repostCount": {
+                "type": "number",
+                "description": "Number of times the post has been reposted"
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the post was created"
+            },
+            "originalPostId": {
+                "type": "string",
+                "description": "If this is a repost, the ID of the original post"
+            }
+        },
+        "required": ["userId", "createdAt"]
+    },
+    "like": {
+        "title": "Like",
+        "description": "A record of a user liking a post",
+        "type": "object",
+        "properties": {
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who liked the post"
+            },
+            "postId": {
+                "type": "string",
+                "description": "The ID of the post that was liked"
+            }
+        },
+        "required": ["userId", "postId"]
+    },
+    "bookmark": {
+        "title": "Bookmark",
+        "description": "A record of a user bookmarking a post",
+        "type": "object",
+        "properties": {
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who bookmarked the post"
+            },
+            "postId": {
+                "type": "string",
+                "description": "The ID of the post that was bookmarked"
+            },
+            "bookmarkedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the post was bookmarked"
+            }
+        },
+        "required": ["userId", "postId", "bookmarkedAt"]
+    },
+    "comment": {
+        "title": "Comment",
+        "description": "A comment on a post",
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The ID of the user who made the comment"
+          },
+          "postId": {
+            "type": "string",
+            "description": "The ID of the post being commented on"
+          },
+          "content": {
+            "type": "string",
+            "description": "The text content of the comment"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the comment was created"
+          }
+        },
+        "required": ["userId", "postId", "content", "createdAt"]
+    },
+    "message": {
+        "title": "Message",
+        "description": "A single message within a conversation",
+        "type": "object",
+        "properties": {
+            "senderId": {
+                "type": "string",
+                "description": "The ID of the user who sent the message"
+            },
+            "text": {
+                "type": "string",
+                "description": "The content of the message"
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the message was sent"
+            }
+        },
+        "required": ["senderId", "text", "timestamp"]
+    },
+    "favoriteTrack": {
+      "title": "Favorite Track",
+      "description": "A record of a user favoriting a music track",
+      "type": "object",
+      "properties": {
+          "userId": { "type": "string" },
+          "trackId": { "type": "number" },
+          "artistName": { "type": "string" },
+          "trackName": { "type": "string" },
+          "previewUrl": { "type": "string", "format": "uri" },
+          "artworkUrl100": { "type": "string", "format": "uri" },
+          "favoritedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "trackId", "trackName", "artistName", "favoritedAt"]
+    },
+    "playlist": {
+      "title": "Playlist",
+      "description": "A user-created playlist of music tracks",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "trackCount": { "type": "number", "description": "Number of tracks in the playlist"}
+      },
+      "required": ["userId", "name", "createdAt"]
+    },
+    "playlistTrack": {
+        "title": "Playlist Track",
+        "description": "A track within a user-created playlist",
+        "type": "object",
+        "properties": {
+            "playlistId": { "type": "string" },
+            "userId": { "type": "string" },
+            "trackId": { "type": "number" },
+            "artistName": { "type": "string" },
+            "trackName": { "type": "string" },
+            "previewUrl": { "type": "string", "format": "uri" },
+            "artworkUrl100": { "type": "string", "format": "uri" },
+            "addedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["playlistId", "userId", "trackId", "trackName", "artistName", "addedAt"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/user"
+      },
+      "description": "Stores user profile information."
+    },
+    "/posts/{postId}": {
+        "schema": {
+            "$ref": "#/entities/post"
+        },
+        "description": "Stores all posts created by users."
+    },
+    "/posts/{postId}/likes/{userId}": {
+        "schema": {
+            "$ref": "#/entities/like"
+        },
+        "description": "Stores likes for a specific post. The document ID is the user ID."
+    },
+     "/bookmarks/{userId}/{postId}": {
+      "schema": {
+        "$ref": "#/entities/bookmark"
+      },
+      "description": "Stores a user's bookmarked posts."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/comment"
+      },
+      "description": "Stores comments for a specific post."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+        "schema": {
+            "$ref": "#/entities/message"
+        },
+        "description": "Stores messages within a specific conversation."
+    },
+    "/favoriteTracks/{userId}/{trackId}": {
+      "schema": {
+        "$ref": "#/entities/favoriteTrack"
+      },
+      "description": "Stores a user's favorite music tracks."
+    },
+    "/playlists/{userId}/{playlistId}": {
+      "schema": {
+        "$ref": "#/entities/playlist"
+      },
+      "description": "Stores user-created playlists."
+    },
+    "/playlistTracks/{playlistId}/{trackId}": {
+        "schema": {
+            "$ref": "#/entities/playlistTrack"
+        },
+        "description": "Stores the tracks belonging to a specific playlist."
+    }
+  }
+}

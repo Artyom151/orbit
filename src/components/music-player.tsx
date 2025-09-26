@@ -55,9 +55,9 @@ export function MusicPlayer() {
                         className="w-full h-1.5 [&>span:first-child]:h-1.5 [&>span:last-child]:h-3.5 [&>span:last-child]:w-3.5"
                     />
                     <div className="p-3 flex items-center gap-4">
-                        <div className="flex items-center gap-3 w-1/4">
+                        <div className="flex items-center gap-3 w-full sm:w-1/4">
                              <Image src={currentTrack.artworkUrl100} alt={currentTrack.trackName} width={56} height={56} className="rounded" unoptimized />
-                            <div className="min-w-0">
+                            <div className="min-w-0 hidden sm:block">
                                 <p className="font-bold truncate">{currentTrack.trackName}</p>
                                 <p className="text-sm text-muted-foreground truncate">{currentTrack.artistName}</p>
                             </div>
@@ -73,11 +73,11 @@ export function MusicPlayer() {
                              <Button variant="ghost" size="icon" onClick={playNext}>
                                 <StepForward />
                             </Button>
-                             <span className="text-xs text-muted-foreground absolute left-1/2 -translate-x-32">{formatTime(audioRef.current?.currentTime || 0)}</span>
-                             <span className="text-xs text-muted-foreground absolute right-1/2 translate-x-32">{formatTime(audioRef.current?.duration || 0)}</span>
+                             <span className="text-xs text-muted-foreground hidden lg:block absolute left-1/2 -translate-x-32">{formatTime(audioRef.current?.currentTime || 0)}</span>
+                             <span className="text-xs text-muted-foreground hidden lg:block absolute right-1/2 translate-x-32">{formatTime(audioRef.current?.duration || 0)}</span>
                         </div>
                         
-                        <div className="flex items-center gap-2 w-1/4 justify-end">
+                        <div className="hidden sm:flex items-center gap-2 w-1/4 justify-end">
                             <AddToPlaylistPopover track={currentTrack}>
                                 <Button variant="ghost" size="icon">
                                     <Plus />
@@ -108,7 +108,7 @@ export function MusicPlayer() {
     // Mini player for other pages
     return (
         <div className="fixed bottom-4 right-4 z-20">
-             <div className="bg-card/90 backdrop-blur-lg border border-border p-3 flex items-center gap-2 animate-fade-in-up rounded-lg shadow-2xl w-96">
+             <div className="bg-card/90 backdrop-blur-lg border border-border p-3 flex items-center gap-2 animate-fade-in-up rounded-lg shadow-2xl w-80 sm:w-96">
                 <Image src={currentTrack.artworkUrl100} alt={currentTrack.trackName} width={48} height={48} className="rounded" unoptimized />
                 <div className='flex-1 min-w-0'>
                     <p className="font-bold truncate text-sm">{currentTrack.trackName}</p>

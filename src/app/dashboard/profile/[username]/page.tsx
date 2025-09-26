@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, UserPlus, ArrowLeft, Edit, Heart, Shield, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useDatabase, useUser } from "@/firebase";
-import { useMemo, use, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ref, query, orderByChild, equalTo } from "firebase/database";
 import { useList } from "@/firebase/rtdb/use-list";
 import { AnimatedBanner } from "@/components/animated-banner";
@@ -45,12 +45,11 @@ export default function ProfilePage({ params }: { params: { username: string } }
   const { user: authUser } = useUser();
   const db = useDatabase();
   const { toast } = useToast();
-  const resolvedParams = use(params);
   
   const userQuery = useMemo(() => {
-    if (!db || !resolvedParams.username) return null;
-    return query(ref(db, 'users'), orderByChild('username'), equalTo(resolvedParams.username));
-  }, [db, resolvedParams.username]);
+    if (!db || !params.username) return null;
+    return query(ref(db, 'users'), orderByChild('username'), equalTo(params.username));
+  }, [db, params.username]);
 
   const { data: userData, loading: loadingUser } = useList<User>(userQuery);
   const user = userData?.[0];
@@ -131,7 +130,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
   return (
     <div>
         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm p-2 px-4 border-b border-border flex items-center gap-6">
-            <Link href="/dashboard">
+            <Link href="/dashboard" className="lg:hidden">
                 <Button variant="ghost" size="icon">
                     <ArrowLeft />
                 </Button>
@@ -142,17 +141,17 @@ export default function ProfilePage({ params }: { params: { username: string } }
             </div>
         </div>
 
-        <div className="relative h-48 w-full bg-secondary animate-fade-in">
+        <div className="relative h-36 md:h-48 w-full bg-secondary animate-fade-in">
           <AnimatedBanner color={gradient} />
         </div>
         
         <div className="p-4 animate-fade-in-up">
-            <div className="flex justify-between items-start">
-                <Avatar className="h-32 w-32 border-4 border-background -mt-20">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
+                <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background -mt-16">
                     <AvatarImage src={user.avatar} alt={user.name} />
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 pt-2 order-first sm:order-last self-end sm:self-auto">
                     {isOwnProfile ? (
                        <EditProfileDialog user={user}>
                         <Button variant="outline" className="transition-colors">
@@ -191,7 +190,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                         <span className="moderator-badge">Moderator</span>
                     )}
                 </div>
-                <p className="text-muted-foreground">@{resolvedParams.username}</p>
+                <p className="text-muted-foreground">@{params.username}</p>
                 <p className="mt-4 max-w-2xl">{user.bio}</p>
             </div>
         </div>

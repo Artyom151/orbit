@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Bookmark, Compass, Home, Mail, MoreHorizontal, User, PanelLeftClose, PanelLeftOpen, Music, Library, Loader2, Moon, Sun } from "lucide-react";
+import { Bell, Bookmark, Compass, Home, Mail, MoreHorizontal, User, PanelLeftClose, PanelLeftOpen, Music, Library, Loader2, Moon, Sun, Menu } from "lucide-react";
 import Link from "next/link";
 import { RightSidebar } from "@/components/right-sidebar";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-provider";
@@ -10,11 +10,124 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "@/lib/auth-service";
 import { Logo } from "@/components/logo";
 import { MusicPlayer } from "@/components/music-player";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+
+function MobileSidebar() {
+  const { user } = useUser();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+  };
+
+  if (!user) {
+    return null;
+  }
+  
+  const userInitial = user.displayName?.charAt(0) || "?";
+  const username = user.username || user.email?.split('@')[0] || "user";
+  
+  const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <Link href={href} className="flex items-center gap-4 p-3 rounded-lg font-medium text-lg hover:bg-secondary transition-colors" onClick={() => setIsOpen(false)}>
+      {children}
+    </Link>
+  );
+
+  return (
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="lg:hidden">
+          <Menu className="size-6"/>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-72 p-4 flex flex-col">
+        <div className="p-2 mb-4">
+          <h1 className="text-2xl font-bold">Orbit</h1>
+        </div>
+        
+        <nav className="flex flex-col gap-1">
+          <NavLink href="/dashboard">
+              <Home className="size-6 shrink-0" />
+              <span>Home</span>
+          </NavLink>
+          <NavLink href="/dashboard/explore">
+              <Compass className="size-6 shrink-0" />
+              <span>Explore</span>
+          </NavLink>
+          <NavLink href="/dashboard/notifications">
+              <Bell className="size-6 shrink-0" />
+              <span>Notifications</span>
+          </NavLink>
+          <NavLink href="/dashboard/messages">
+              <Mail className="size-6 shrink-0" />
+              <span>Messages</span>
+          </NavLink>
+          <NavLink href="/dashboard/music">
+              <Music className="size-6 shrink-0" />
+              <span>Music</span>
+          </NavLink>
+          <NavLink href="/dashboard/bookmarks">
+              <Bookmark className="size-6 shrink-0" />
+              <span>Bookmarks</span>
+          </NavLink>
+          <NavLink href={`/dashboard/profile/${username}`}>
+              <User className="size-6 shrink-0" />
+              <span>Profile</span>
+          </NavLink>
+        </nav>
+        
+        <div className="mt-auto">
+          {user.username && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="relative h-auto w-full p-2 justify-start text-left"
+                >
+                  <div className="flex items-center justify-between w-full gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+                      <AvatarFallback>{userInitial}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="font-bold">{user.displayName}</span>
+                      <span className="text-sm text-muted-foreground">@{user.username}</span>
+                    </div>
+                    <MoreHorizontal className="size-5" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+                <DropdownMenuItem>
+                    Add an existing account
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                    Log out @{user.username}
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="ml-2">Theme</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <ThemeToggle />
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
 
 
 function DashboardSidebar() {
@@ -34,7 +147,7 @@ function DashboardSidebar() {
 
   return (
     <aside className={cn(
-      "flex flex-col border-r border-border p-4 transition-all duration-300 ease-in-out",
+      "hidden lg:flex flex-col border-r border-border p-4 transition-all duration-300 ease-in-out",
       isCollapsed ? "w-20 items-center" : "w-72"
     )}>
         <div className={cn(
@@ -192,11 +305,17 @@ export default function DashboardLayout({
     <SidebarProvider>
       <div className="flex min-h-screen">
           <DashboardSidebar />
-          <main className="flex-1 flex">
-            <div className="w-full max-w-2xl border-l border-r border-border">
+          <main className="flex-1 flex w-full">
+             <div className="w-full lg:max-w-2xl border-x-0 lg:border-x border-border">
+              <div className="p-2 border-b border-border flex items-center gap-4 lg:hidden sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+                  <MobileSidebar />
+                  <h1 className="text-xl font-bold">Home</h1>
+              </div>
               {children}
             </div>
-            <RightSidebar />
+            <div className="hidden xl:block">
+              <RightSidebar />
+            </div>
           </main>
       </div>
       <MusicPlayer />

@@ -73,7 +73,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm p-4 border-b border-border">
+      <div className="hidden lg:block sticky top-0 z-10 bg-background/80 backdrop-blur-sm p-4 border-b border-border">
         <h1 className="text-xl font-bold">Home</h1>
       </div>
       <div className="p-4 border-b border-border">

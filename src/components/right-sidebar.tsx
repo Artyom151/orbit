@@ -66,7 +66,7 @@ export function RightSidebar() {
     }, [posts]);
 
   return (
-    <aside className="w-96 p-4 space-y-6">
+    <aside className="w-96 p-4 space-y-6 lg:border-l lg:border-border">
         <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Search" className="rounded-full pl-10 bg-secondary border-none h-12" />

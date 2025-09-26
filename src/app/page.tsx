@@ -114,7 +114,7 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
-      <div className="flex flex-1 flex-col items-center justify-center bg-background p-8 text-white">
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-background p-8 text-white">
         <div className="flex flex-col items-center text-center max-w-sm">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
           <h1 className="text-4xl font-bold mt-6">Orbit</h1>

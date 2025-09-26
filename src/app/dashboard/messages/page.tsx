@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDatabase, useUser } from "@/firebase";
-import { Search, Phone, Video, MoreVertical, Send } from "lucide-react";
+import { Search, Phone, Video, MoreVertical, Send, ArrowLeft } from "lucide-react";
 import { ref, query, orderByChild, equalTo, onValue, push, set, serverTimestamp, get } from "firebase/database";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -41,8 +41,6 @@ export default function MessagesPage() {
     
     const conversationsQuery = useMemo(() => {
         if (!authUser || !db) return null;
-        // In RTDB, complex queries like 'user is in conversation' are best handled by denormalizing data.
-        // For this MVP, we fetch all and filter client-side. A better structure is /user-conversations/{userId}.
         return ref(db, 'conversations');
     }, [authUser, db]);
 
@@ -106,8 +104,11 @@ export default function MessagesPage() {
 
 
   return (
-    <div className="grid grid-cols-[350px_1fr] h-screen">
-        <div className="border-r border-border flex flex-col">
+    <div className="grid md:grid-cols-[350px_1fr] h-screen max-h-[calc(100vh-65px)] lg:max-h-screen">
+        <div className={cn(
+            "border-r border-border flex-col",
+            selectedConversation ? "hidden md:flex" : "flex"
+        )}>
             <div className="p-4 border-b border-border">
                 <h1 className="text-xl font-bold">Messages</h1>
                  <div className="relative mt-4">
@@ -146,11 +147,17 @@ export default function MessagesPage() {
                  )}
             </div>
         </div>
-        <div className="flex flex-col">
+        <div className={cn(
+            "flex-col",
+            selectedConversation ? "flex" : "hidden md:flex"
+        )}>
             {selectedConversation && otherUser ? (
                 <>
                     <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm p-3 border-b border-border flex items-center justify-between">
                         <div className="flex items-center gap-3">
+                            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedConversation(null)}>
+                                <ArrowLeft />
+                            </Button>
                             <Avatar className="h-10 w-10 border-none">
                                 <AvatarImage src={otherUser.avatar} />
                                 <AvatarFallback>{otherUser.name.charAt(0)}</AvatarFallback>
@@ -190,7 +197,7 @@ export default function MessagesPage() {
                     </div>
                 </>
             ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="flex-col items-center justify-center h-full text-center hidden md:flex">
                     <div className="p-8 rounded-lg bg-secondary/50">
                         <h2 className="text-2xl font-bold">Select a message</h2>
                         <p className="text-muted-foreground mt-2">Choose from your existing conversations, start a new one, and just keep swimming.</p>

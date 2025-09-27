@@ -1,0 +1,9 @@
+{
+  "profileCover": {
+    "src": "https://picsum.photos/seed/profcover/800/200",
+    "width": 800,
+    "height": 200,
+    "alt": "Profile cover image",
+    "aiHint": "social media cover"
+  }
+}

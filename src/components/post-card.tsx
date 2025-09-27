@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from "next/image";
@@ -197,10 +198,16 @@ const PostComments = ({ post, onCommentCountChange }: { post: Post & { user: Use
 
             {loadingComments || loadingUsers ? (
                 <CommentSkeleton />
-            ) : commentsWithUsers.reverse().map(comment => (
+            ) : commentsWithUsers.reverse().map(comment => {
+              const isVideoAvatar = comment.user?.avatar && comment.user.avatar.startsWith('data:video');
+              return (
                 <div key={comment.id} className="flex items-start gap-3 pt-2">
                     <Avatar className="h-8 w-8 border-none">
-                        <AvatarImage src={comment.user?.avatar} />
+                        {isVideoAvatar ? (
+                            <video src={comment.user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                            <AvatarImage src={comment.user?.avatar} />
+                        )}
                         <AvatarFallback>{comment.user?.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="text-sm bg-secondary rounded-lg px-3 py-2 w-full">
@@ -208,7 +215,7 @@ const PostComments = ({ post, onCommentCountChange }: { post: Post & { user: Use
                         <p className="whitespace-pre-wrap">{comment.content}</p>
                     </div>
                 </div>
-            ))}
+            )})}
         </div>
     );
 };
@@ -390,6 +397,7 @@ export function PostCard({ post }: PostCardProps) {
   
   const postDate = new Date(post.createdAt);
   const canDelete = authUser?.uid === post.userId || authUser?.role === 'developer' || authUser?.role === 'moderator';
+  const isVideoAvatar = post.user.avatar && post.user.avatar.startsWith('data:video');
 
   return (
     <Card as="article" className="flex flex-col p-4 rounded-none border-x-0 border-t-0 border-b animate-fade-in-up">
@@ -398,7 +406,11 @@ export function PostCard({ post }: PostCardProps) {
       
       <div className="flex space-x-4">
         <Avatar className="h-10 w-10 border-none">
-          <AvatarImage src={post.user.avatar} alt={post.user.name} />
+          {isVideoAvatar ? (
+            <video src={post.user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+          ) : (
+            <AvatarImage src={post.user.avatar} alt={post.user.name} />
+          )}
           <AvatarFallback>{post.user.name?.charAt(0)}</AvatarFallback>
         </Avatar>
         <div className="flex-1 space-y-2">
@@ -424,7 +436,7 @@ export function PostCard({ post }: PostCardProps) {
                   <MoreHorizontal className="size-5 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent showOverlay={false}>
                 {canDelete ? (
                   <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                     <AlertDialogTrigger asChild>

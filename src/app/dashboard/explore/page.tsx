@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { PostCard } from "@/components/post-card";
@@ -29,11 +30,17 @@ const PostSkeleton = () => (
     </Card>
 );
 
-const UserCard = ({ user }: { user: User }) => (
+const UserCard = ({ user }: { user: User }) => {
+    const isVideoAvatar = user.avatar && user.avatar.startsWith('data:video');
+    return (
     <Card className="p-4">
         <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-                <AvatarImage src={user.avatar} />
+                {isVideoAvatar ? (
+                    <video src={user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                ) : (
+                    <AvatarImage src={user.avatar} />
+                )}
                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
@@ -42,7 +49,7 @@ const UserCard = ({ user }: { user: User }) => (
             </div>
         </div>
     </Card>
-);
+)};
 
 const GroupCard = ({ group }: { group: Group }) => {
     const isGradientBanner = group.bannerUrl === 'default_gradient';
@@ -206,5 +213,3 @@ export default function ExplorePage() {
     </div>
   );
 }
-
-    

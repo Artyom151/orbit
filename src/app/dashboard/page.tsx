@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { CreatePostForm } from "@/components/create-post-form";
@@ -92,14 +93,20 @@ export default function DashboardPage() {
       <div className="p-4 border-b border-border">
           <p className="text-sm font-semibold text-primary mb-2">{onlineUsers.length > 0 ? `${onlineUsers.length} online` : 'Welcome'}</p>
           <div className="flex items-center -space-x-2">
-            {isLoading ? <p className="text-sm text-muted-foreground">Loading users...</p> : onlineUsers.map((user: User, index) => (
+            {isLoading ? <p className="text-sm text-muted-foreground">Loading users...</p> : onlineUsers.map((user: User, index) => {
+              const isVideoAvatar = user.avatar && user.avatar.startsWith('data:video');
+              return (
               <Link href={`/dashboard/profile/${user.username}`} key={user.id}>
                 <Avatar className="h-12 w-12 border-2 border-background hover:scale-110 transition-transform duration-200" style={{ zIndex: onlineUsers.length - index }}>
-                  <AvatarImage src={user.avatar} />
+                  {isVideoAvatar ? (
+                      <video src={user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                      <AvatarImage src={user.avatar} />
+                  )}
                   <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
               </Link>
-            ))}
+            )})}
             { !isLoading && onlineUsers.length === 0 && <p className="text-sm text-muted-foreground">Say hello to the community!</p>}
           </div>
         </div>

@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { Article, User } from "@/lib/types";
 import Image from "next/image";
@@ -13,6 +14,7 @@ type ArticleCardProps = {
 export function ArticleCard({ article }: ArticleCardProps) {
     
     const readingTime = Math.ceil(article.content.split(' ').length / 200);
+    const isVideoAvatar = article.author.avatar && article.author.avatar.startsWith('data:video');
 
     return (
         <Link href={`/dashboard/articles/${article.id}`}>
@@ -30,7 +32,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6 border-none">
-                                <AvatarImage src={article.author.avatar} />
+                                {isVideoAvatar ? (
+                                    <video src={article.author.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                                ) : (
+                                    <AvatarImage src={article.author.avatar} />
+                                )}
                                 <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <span>{article.author.name}</span>

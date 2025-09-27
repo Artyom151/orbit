@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -102,6 +103,8 @@ export function CreatePostForm({ groupId }: CreatePostFormProps) {
     setAttachedTrack(track);
     setIsMusicDialogOpen(false);
   }
+  
+  const isVideoAvatar = user.photoURL && user.photoURL.startsWith('data:video');
 
   return (
     <>
@@ -109,7 +112,11 @@ export function CreatePostForm({ groupId }: CreatePostFormProps) {
     <div className="border-b border-border p-4">
       <div className="flex items-start gap-4">
         <Avatar className="h-12 w-12 border-none">
-          <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+          {isVideoAvatar ? (
+            <video src={user.photoURL} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+          ) : (
+            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+          )}
           <AvatarFallback>{user.displayName?.charAt(0) || "?"}</AvatarFallback>
         </Avatar>
         <div className="w-full space-y-2">

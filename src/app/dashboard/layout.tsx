@@ -46,6 +46,7 @@ function MobileSidebar() {
   const userInitial = user.displayName?.charAt(0) || "?";
   const username = user.username || user.email?.split('@')[0] || "user";
   const isModerator = user.role === 'moderator' || user.role === 'developer';
+  const isVideoAvatar = user.photoURL && user.photoURL.startsWith('data:video');
   
   const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
     <Link href={href} className="flex items-center gap-4 p-3 rounded-lg font-medium text-lg hover:bg-secondary transition-colors" onClick={() => setIsOpen(false)}>
@@ -127,7 +128,11 @@ function MobileSidebar() {
                 >
                   <div className="flex items-center justify-between w-full gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+                      {isVideoAvatar ? (
+                        <video src={user.photoURL} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+                      )}
                       <AvatarFallback>{userInitial}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
@@ -138,7 +143,7 @@ function MobileSidebar() {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+              <DropdownMenuContent className="w-56 mb-2" align="start">
                 <SetStatusDialog>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <Smile className="mr-2" />
@@ -186,6 +191,7 @@ function DashboardSidebar() {
   
   const userInitial = user.displayName?.charAt(0) || "?";
   const username = user.username || user.email?.split('@')[0] || "user";
+  const isVideoAvatar = user.photoURL && user.photoURL.startsWith('data:video');
 
   return (
     <aside className={cn(
@@ -293,7 +299,7 @@ function DashboardSidebar() {
                         {!isLeftSidebarCollapsed && <span>More</span>}
                     </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+                <DropdownMenuContent className="w-56 mb-2" align="start">
                    <ThemeToggle />
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -314,7 +320,11 @@ function DashboardSidebar() {
                       isLeftSidebarCollapsed ? "justify-center" : "gap-3"
                     )}>
                         <Avatar className="h-10 w-10">
-                            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+                            {isVideoAvatar ? (
+                                <video src={user.photoURL} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                            ) : (
+                                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ""} />
+                            )}
                             <AvatarFallback>{userInitial}</AvatarFallback>
                         </Avatar>
                         {!isLeftSidebarCollapsed && (
@@ -329,7 +339,7 @@ function DashboardSidebar() {
                     </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+              <DropdownMenuContent className="w-56 mb-2" align="start">
                 <SetStatusDialog>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <Smile className="mr-2" />
@@ -372,15 +382,17 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <DashboardSidebar />
-      <main className="flex-1 flex w-full">
-        <div className="w-full lg:max-w-2xl border-x-0 lg:border-x border-border">
+      <main className="flex-1 flex flex-col w-full">
+        <div className="w-full lg:max-w-2xl border-x-0 lg:border-x border-border flex-1 flex flex-col">
            <div className="p-2 border-b border-border flex items-center justify-between lg:hidden sticky top-0 bg-background/80 backdrop-blur-sm z-30">
             <div className="flex items-center gap-4">
               <MobileSidebar />
                <h1 className="text-xl font-bold">{pageTitle}</h1>
             </div>
           </div>
-          {children}
+          <div className="flex-1 overflow-y-auto">
+            {children}
+          </div>
         </div>
       </main>
       <MusicPlayer />

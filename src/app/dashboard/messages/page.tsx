@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -381,6 +382,7 @@ export default function MessagesPage() {
     };
 
     const otherUser = selectedConversation?.otherUser;
+    const isOtherUserVideoAvatar = otherUser?.avatar && otherUser.avatar.startsWith('data:video');
 
     if (activeCall) {
         return <CallView call={activeCall} onEndCall={handleEndCall} isReceiving={isReceivingCall} />
@@ -417,7 +419,9 @@ export default function MessagesPage() {
             </div>
             <div className="flex-1 overflow-y-auto">
                 {loadingConversations && <p className="p-4 text-center text-muted-foreground">Loading conversations...</p>}
-                {!loadingConversations && conversationsWithData.map((conv) => (
+                {!loadingConversations && conversationsWithData.map((conv) => {
+                  const isVideoAvatar = conv.otherUser?.avatar && conv.otherUser.avatar.startsWith('data:video');
+                  return (
                     <div
                         key={conv.id} 
                         className={cn(
@@ -427,7 +431,11 @@ export default function MessagesPage() {
                         onClick={() => handleSelectConversation(conv)}
                     >
                         <Avatar className="h-12 w-12 border-none">
-                            <AvatarImage src={conv.otherUser?.avatar} />
+                            {isVideoAvatar ? (
+                                <video src={conv.otherUser!.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                            ) : (
+                                <AvatarImage src={conv.otherUser?.avatar} />
+                            )}
                             <AvatarFallback>{conv.otherUser?.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
@@ -464,7 +472,7 @@ export default function MessagesPage() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                ))}
+                )})}
                  {!loadingConversations && conversationsWithData.length === 0 && (
                     <p className="text-center text-muted-foreground py-8">No conversations yet.</p>
                  )}
@@ -482,7 +490,11 @@ export default function MessagesPage() {
                                 <ArrowLeft />
                             </Button>
                             <Avatar className="h-10 w-10 border-none">
-                                <AvatarImage src={otherUser.avatar} />
+                                {isOtherUserVideoAvatar ? (
+                                    <video src={otherUser.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                                ) : (
+                                    <AvatarImage src={otherUser.avatar} />
+                                )}
                                 <AvatarFallback>{otherUser.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>

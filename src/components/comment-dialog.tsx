@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -152,6 +153,9 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
             });
         }
     };
+    
+    const isPostUserVideoAvatar = post.user.avatar && post.user.avatar.startsWith('data:video');
+    const isAuthUserVideoAvatar = authUser?.photoURL && authUser.photoURL.startsWith('data:video');
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -161,7 +165,11 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
                 </DialogHeader>
                 <div className="flex space-x-4 px-6">
                      <Avatar className="h-10 w-10 border-none">
-                        <AvatarImage src={post.user.avatar} alt={post.user.name} />
+                        {isPostUserVideoAvatar ? (
+                            <video src={post.user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                            <AvatarImage src={post.user.avatar} alt={post.user.name} />
+                        )}
                         <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1">
@@ -182,7 +190,11 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
                 <div className="p-6 border-y border-border">
                     <div className="flex items-start gap-4">
                         <Avatar className="h-10 w-10 border-none">
-                            <AvatarImage src={authUser?.photoURL || undefined} alt={authUser?.displayName || ""} />
+                            {isAuthUserVideoAvatar ? (
+                                <video src={authUser.photoURL!} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                            ) : (
+                                <AvatarImage src={authUser?.photoURL || undefined} alt={authUser?.displayName || ""} />
+                            )}
                             <AvatarFallback>{authUser?.displayName?.charAt(0) || "?"}</AvatarFallback>
                         </Avatar>
                         <div className="w-full space-y-3">
@@ -209,10 +221,17 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
                          <CommentSkeleton />
                        </>
                     ) : commentsWithUsers.length > 0 ? (
-                        commentsWithUsers.map((comment) => comment.user ? (
+                        commentsWithUsers.map((comment) => {
+                          if (!comment.user) return null;
+                          const isCommenterVideoAvatar = comment.user.avatar && comment.user.avatar.startsWith('data:video');
+                          return (
                            <Card key={comment.id} className="flex space-x-4 p-4 border-0 border-b rounded-none group">
                                 <Avatar className="h-10 w-10 border-none">
-                                    <AvatarImage src={comment.user.avatar} alt={comment.user.name} />
+                                    {isCommenterVideoAvatar ? (
+                                        <video src={comment.user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                                    ) : (
+                                        <AvatarImage src={comment.user.avatar} alt={comment.user.name} />
+                                    )}
                                     <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 space-y-1">
@@ -256,7 +275,7 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
                                     <p className="text-base">{comment.content}</p>
                                 </div>
                            </Card>
-                        ) : null)
+                        )})
                     ) : <p className="text-center py-8 text-muted-foreground">No comments yet.</p>}
                 </div>
             </DialogContent>

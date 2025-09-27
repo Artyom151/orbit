@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useDatabase, useUser } from "@/firebase";
@@ -83,7 +84,9 @@ export default function NotificationsPage() {
         </div>
       ) : sortedNotifications.length > 0 ? (
         <div className="divide-y divide-border">
-            {sortedNotifications.map(notification => (
+            {sortedNotifications.map(notification => {
+              const isVideoAvatar = notification.senderAvatar && notification.senderAvatar.startsWith('data:video');
+              return (
                 <Link 
                     href={notification.type === 'follow' ? `/dashboard/profile/${notification.senderUsername}` : `/dashboard/post/${notification.postId}`} 
                     key={notification.id}
@@ -91,7 +94,11 @@ export default function NotificationsPage() {
                     <div className="flex gap-4 p-4 hover:bg-secondary transition-colors">
                         <div className="relative">
                             <Avatar className="size-10">
-                                <AvatarImage src={notification.senderAvatar} />
+                                {isVideoAvatar ? (
+                                    <video src={notification.senderAvatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                                ) : (
+                                    <AvatarImage src={notification.senderAvatar} />
+                                )}
                                 <AvatarFallback>{notification.senderName?.charAt(0) || '?'}</AvatarFallback>
                             </Avatar>
                             <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
@@ -108,7 +115,7 @@ export default function NotificationsPage() {
                         </div>
                     </div>
                 </Link>
-            ))}
+            )})}
         </div>
       ) : (
          <div className="p-4 text-center">

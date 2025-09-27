@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useDatabase, useUser } from "@/firebase";
@@ -15,11 +16,17 @@ import { acceptConnection, removeConnection } from "@/lib/connection-service";
 import { useToast } from "@/hooks/use-toast";
 
 
-const UserCard = ({ user, children }: { user: User, children?: React.ReactNode }) => (
+const UserCard = ({ user, children }: { user: User, children?: React.ReactNode }) => {
+    const isVideoAvatar = user.avatar && user.avatar.startsWith('data:video');
+    return (
     <Card className="flex items-center justify-between p-4">
         <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-                <AvatarImage src={user.avatar} />
+                {isVideoAvatar ? (
+                    <video src={user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                ) : (
+                    <AvatarImage src={user.avatar} />
+                )}
                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
@@ -31,7 +38,7 @@ const UserCard = ({ user, children }: { user: User, children?: React.ReactNode }
             {children}
         </div>
     </Card>
-)
+)}
 
 export default function ConnectionsPage() {
     const { user: authUser } = useUser();

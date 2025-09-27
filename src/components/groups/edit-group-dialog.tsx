@@ -36,16 +36,43 @@ export function EditGroupDialog({ group, children }: EditGroupDialogProps) {
   const [description, setDescription] = useState(group.description);
   
   const getInitialBannerType = () => {
-    if (group.bannerUrl === 'default_gradient') return 'gradient';
-    if (group.bannerUrl.startsWith('data:image')) return 'custom';
+    if (!group.bannerUrl) return 'placeholder';
+    if (group.bannerUrl.startsWith('["#')) return 'gradient';
+    if (group.bannerUrl.startsWith('data:video')) return 'custom_video';
+    if (group.bannerUrl.startsWith('data:image') || group.bannerUrl.startsWith('http')) return 'custom_image';
     return 'placeholder';
   }
 
   const [bannerType, setBannerType] = useState(getInitialBannerType());
-  const [bannerPreview, setBannerPreview] = useState(group.bannerUrl.startsWith('data:image') ? group.bannerUrl : null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(group.bannerUrl.startsWith('data:') ? group.bannerUrl : null);
   const bannerInputRef = React.useRef<HTMLInputElement>(null);
+  const bannerVideoInputRef = React.useRef<HTMLInputElement>(null);
+  const [color1, setColor1] = useState('#a855f7');
+  const [color2, setColor2] = useState('#6366f1');
 
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  React.useEffect(() => {
+    if (bannerType === 'gradient' && group.bannerUrl.startsWith('["#')) {
+        try {
+            const colors = JSON.parse(group.bannerUrl);
+            setColor1(colors[0]);
+            setColor2(colors[1]);
+        } catch {}
+    }
+  }, [bannerType, group.bannerUrl]);
+
+
+  const handleBannerImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleBannerVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -65,15 +92,17 @@ export function EditGroupDialog({ group, children }: EditGroupDialogProps) {
     try {
         const groupRef = ref(db, `groups/${group.id}`);
 
-        let bannerUrl = '';
+        let bannerUrl = group.bannerUrl; // Default to old one
         switch(bannerType) {
             case 'gradient':
-                bannerUrl = 'default_gradient';
+                bannerUrl = JSON.stringify([color1, color2]);
                 break;
-            case 'custom':
-                 // In a real app, upload bannerPreview to storage and get URL
-                bannerUrl = bannerPreview || `https://picsum.photos/seed/${group.id}/800/200`;
-                break;
+            case 'custom_image':
+            case 'custom_video':
+                 if (bannerPreview) {
+                    bannerUrl = bannerPreview;
+                 }
+                 break;
             case 'placeholder':
             default:
                  bannerUrl = `https://picsum.photos/seed/${group.id}/800/200`;
@@ -131,7 +160,7 @@ export function EditGroupDialog({ group, children }: EditGroupDialogProps) {
                 Banner
               </Label>
               <div className='col-span-3 space-y-4'>
-                <RadioGroup defaultValue={bannerType} className="flex gap-4" onValueChange={setBannerType}>
+                <RadioGroup value={bannerType} className="flex flex-wrap gap-4" onValueChange={(value) => { setBannerType(value); setBannerPreview(null); }}>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="placeholder" id="r1" />
                         <Label htmlFor="r1">Placeholder</Label>
@@ -141,16 +170,33 @@ export function EditGroupDialog({ group, children }: EditGroupDialogProps) {
                         <Label htmlFor="r2">Gradient</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="custom" id="r3" />
-                        <Label htmlFor="r3">Custom</Label>
+                        <RadioGroupItem value="custom_image" id="r3" />
+                        <Label htmlFor="r3">Image</Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="custom_video" id="r4" />
+                        <Label htmlFor="r4">Video</Label>
                     </div>
                 </RadioGroup>
 
-                {bannerType === 'custom' && (
+                {bannerType === 'gradient' && (
+                    <div className='flex items-center gap-2'>
+                        <Input type="color" value={color1} onChange={(e) => setColor1(e.target.value)} />
+                        <Input type="color" value={color2} onChange={(e) => setColor2(e.target.value)} />
+                    </div>
+                )}
+                {bannerType === 'custom_image' && (
                     <div>
-                        <Input type="file" accept="image/*" className='hidden' ref={bannerInputRef} onChange={handleBannerChange} />
+                        <Input type="file" accept="image/*" className='hidden' ref={bannerInputRef} onChange={handleBannerImageChange} />
                         <Button type="button" variant="outline" onClick={() => bannerInputRef.current?.click()}>Upload Image</Button>
-                        {bannerPreview && <Image src={bannerPreview} alt="Banner preview" width={400} height={100} className="rounded-md object-cover mt-2" />}
+                        {bannerPreview ? <Image src={bannerPreview} alt="Banner preview" width={400} height={100} className="rounded-md object-cover mt-2" /> : (group.bannerUrl && group.bannerUrl.startsWith('http')) && <Image src={group.bannerUrl} alt="Banner preview" width={400} height={100} className="rounded-md object-cover mt-2" />}
+                    </div>
+                )}
+                 {bannerType === 'custom_video' && (
+                    <div>
+                        <Input type="file" accept="video/*" className='hidden' ref={bannerVideoInputRef} onChange={handleBannerVideoChange} />
+                        <Button type="button" variant="outline" onClick={() => bannerVideoInputRef.current?.click()}>Upload Video</Button>
+                        {bannerPreview ? <video src={bannerPreview} muted loop autoPlay className="rounded-md object-cover mt-2 w-full h-auto max-h-28" /> : (group.bannerUrl.startsWith('data:video') && <video src={group.bannerUrl} muted loop autoPlay className="rounded-md object-cover mt-2 w-full h-auto max-h-28" />)}
                     </div>
                 )}
               </div>

@@ -42,18 +42,22 @@ export function MusicPlayer() {
         )
     }
 
+    const truncatedTrackName = currentTrack.trackName.length > 11 
+        ? `${currentTrack.trackName.substring(0, 11)}...` 
+        : currentTrack.trackName;
+
     // Mini player for other pages
     return (
         <>
         <FullScreenPlayer />
         <div className="fixed bottom-4 right-4 z-50">
              <div 
-                className="bg-card/90 backdrop-blur-lg border border-border p-3 flex items-center gap-2 animate-fade-in-up rounded-lg shadow-2xl w-80 sm:w-96 text-left"
+                className="bg-card/90 backdrop-blur-lg border border-border p-3 flex items-center gap-2 animate-fade-in-up rounded-lg shadow-2xl w-80 sm:w-96"
              >
                 <button className="flex items-center gap-2 flex-1 min-w-0" onClick={() => setIsFullScreenPlayerOpen(true)}>
                     <Image src={currentTrack.artworkUrl100} alt={currentTrack.trackName} width={48} height={48} className="rounded" unoptimized />
                     <div className='flex-1 min-w-0'>
-                        <p className="font-bold truncate text-sm">{currentTrack.trackName}</p>
+                        <p className="font-bold truncate text-sm">{truncatedTrackName}</p>
                         <p className="text-xs text-muted-foreground truncate">{currentTrack.artistName}</p>
                     </div>
                 </button>
@@ -80,3 +84,5 @@ export function MusicPlayer() {
         </>
     )
 }
+
+    

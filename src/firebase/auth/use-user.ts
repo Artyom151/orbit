@@ -1,10 +1,12 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { useAuth, useDatabase } from '../provider';
 import { ref, onValue, off } from 'firebase/database';
+import { Track } from '@/lib/types';
 
 export type AppUser = User & {
     username?: string;
@@ -14,6 +16,8 @@ export type AppUser = User & {
     coverPhoto?: string;
     onboardingCompleted?: boolean;
     role?: 'user' | 'moderator' | 'developer';
+    profileSong?: Track;
+    profileBorder?: 'none' | 'rainbow' | 'gold' | 'neon' | 'custom' | { gradient: [string, string], glow: string };
 }
 
 export function useUser() {
@@ -49,6 +53,8 @@ export function useUser() {
                     coverPhoto: userData.coverPhoto,
                     onboardingCompleted: userData.onboardingCompleted,
                     role: userData.role,
+                    profileSong: userData.profileSong,
+                    profileBorder: userData.profileBorder,
                 });
             } else {
                  setUser(authUser);

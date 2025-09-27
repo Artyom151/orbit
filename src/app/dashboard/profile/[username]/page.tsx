@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from "next/image";
@@ -15,10 +16,12 @@ import { useList } from "@/firebase/rtdb/use-list";
 import { useObject } from "@/firebase/rtdb/use-object";
 import { AnimatedBanner } from "@/components/animated-banner";
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
-import type { User, Post as PostType, Connection } from "@/lib/types";
+import type { User, Post as PostType, Connection, Status } from "@/lib/types";
 import { updateUserProfile } from "@/lib/auth-service";
 import { useToast } from "@/hooks/use-toast";
 import { acceptConnection, removeConnection, sendConnectionRequest } from "@/lib/connection-service";
+import { cn } from "@/lib/utils";
+import { ProfileSongPlayer } from "@/components/profile/profile-song-player";
 
 
 export default function ProfilePage({ params }: { params: { username: string } }) {
@@ -39,8 +42,14 @@ export default function ProfilePage({ params }: { params: { username: string } }
     if (!user || !db) return null;
     return query(ref(db, "posts"), orderByChild("userId"), equalTo(user.id));
   }, [db, user]);
+
+  const userStatusQuery = useMemo(() => {
+    if (!user || !db) return null;
+    return ref(db, `status/${user.id}`);
+  }, [db, user]);
   
   const { data: userPostsData, loading: loadingPosts } = useList<Omit<PostType, 'user'>>(userPostsQuery);
+  const { data: userStatus } = useObject<Status>(userStatusQuery);
   
   // My connection to them
   const connectionRef = useMemo(() => {
@@ -71,17 +80,28 @@ export default function ProfilePage({ params }: { params: { username: string } }
   }, [userPostsData, user]);
 
   const [gradient, setGradient] = useState<string[] | undefined>();
+  const [videoBanner, setVideoBanner] = useState<string | undefined>();
 
   useEffect(() => {
     if (user?.coverPhoto) {
-      try {
-        const parsedGradient = JSON.parse(user.coverPhoto);
-        if (Array.isArray(parsedGradient) && parsedGradient.length === 2) {
-          setGradient(parsedGradient);
-        }
-      } catch (e) {
+      if (user.coverPhoto.startsWith('data:video')) {
+        setVideoBanner(user.coverPhoto);
         setGradient(undefined);
+      } else {
+        try {
+          const parsedGradient = JSON.parse(user.coverPhoto);
+          if (Array.isArray(parsedGradient) && parsedGradient.length === 2) {
+            setGradient(parsedGradient);
+            setVideoBanner(undefined);
+          }
+        } catch (e) {
+          setGradient(undefined);
+          setVideoBanner(undefined);
+        }
       }
+    } else {
+        setGradient(undefined);
+        setVideoBanner(undefined);
     }
   }, [user?.coverPhoto]);
   
@@ -117,7 +137,12 @@ export default function ProfilePage({ params }: { params: { username: string } }
                 toast({ title: "Connection request cancelled" });
                 break;
             case 'pending_incoming':
-                await acceptConnection(db, authUser.uid, user.id);
+                await acceptConnection(db, authUser.uid, user.id, {
+                    uid: authUser.uid,
+                    displayName: authUser.displayName,
+                    photoURL: authUser.photoURL,
+                    username: authUser.username,
+                });
                 toast({ title: "Connection accepted!" });
                 break;
             default:
@@ -193,6 +218,16 @@ export default function ProfilePage({ params }: { params: { username: string } }
   }
   
   const isOwnProfile = authUser?.uid === user.id;
+  const coverIsImage = user.coverPhoto && user.coverPhoto.startsWith('https');
+  const isVideoAvatar = user.avatar && user.avatar.startsWith('data:video');
+
+  const customBorderStyle: React.CSSProperties = {};
+  if (typeof user.profileBorder === 'object' && user.profileBorder.gradient) {
+    customBorderStyle.background = `linear-gradient(to bottom right, ${user.profileBorder.gradient[0]}, ${user.profileBorder.gradient[1]})`;
+    if (user.profileBorder.glow) {
+      customBorderStyle.boxShadow = `0 0 15px 2px ${user.profileBorder.glow}`;
+    }
+  }
 
   return (
     <div>
@@ -209,15 +244,32 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </div>
 
         <div className="relative h-36 md:h-48 w-full bg-secondary animate-fade-in">
-          <AnimatedBanner color={gradient} />
+          {coverIsImage ? (
+             <Image src={user.coverPhoto!} alt={user.name} fill className="object-cover" />
+          ) : (
+             <AnimatedBanner color={gradient} videoUrl={videoBanner} />
+          )}
         </div>
         
         <div className="p-4 animate-fade-in-up">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background -mt-16 md:-mt-20">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <div 
+                    className={cn("relative z-10 h-24 w-24 md:h-32 md:w-32 -mt-16 md:-mt-20 rounded-full p-1",
+                        user.profileBorder === 'rainbow' && 'bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 animate-gradient-animation',
+                        user.profileBorder === 'gold' && 'bg-gradient-to-br from-yellow-300 via-amber-500 to-yellow-300',
+                        user.profileBorder === 'neon' && 'bg-cyan-400 shadow-[0_0_15px_2px] shadow-cyan-400/50'
+                    )}
+                    style={customBorderStyle}
+                >
+                    <Avatar className="h-full w-full">
+                         {isVideoAvatar ? (
+                           <video src={user.avatar} loop autoPlay muted className="w-full h-full object-cover rounded-full" />
+                         ) : (
+                           <AvatarImage src={user.avatar} alt={user.name} />
+                         )}
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </div>
                 <div className="flex items-center gap-2 pt-2 order-first sm:order-last self-end sm:self-auto">
                     {isOwnProfile ? (
                        <EditProfileDialog user={user}>
@@ -245,8 +297,9 @@ export default function ProfilePage({ params }: { params: { username: string } }
             </div>
 
             <div className="pt-4">
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold">{user.name}</h1>
+                     <div className={cn("w-3 h-3 rounded-full", userStatus?.state === 'online' ? 'bg-green-500' : 'bg-gray-400')} />
                     {user.role === 'developer' && (
                         <span className="developer-badge">Developer</span>
                     )}
@@ -255,7 +308,17 @@ export default function ProfilePage({ params }: { params: { username: string } }
                     )}
                 </div>
                 <p className="text-muted-foreground">@{user.username}</p>
+                {userStatus?.customStatus && (
+                    <div className="mt-2 text-sm text-muted-foreground p-2 bg-secondary rounded-md inline-block">
+                        {userStatus.customStatus}
+                    </div>
+                )}
                 <p className="mt-4 max-w-2xl">{user.bio}</p>
+                 {user.profileSong && (
+                    <div className="mt-6 flex justify-center">
+                        <ProfileSongPlayer track={user.profileSong} />
+                    </div>
+                 )}
             </div>
         </div>
       
@@ -287,3 +350,5 @@ export default function ProfilePage({ params }: { params: { username: string } }
     </div>
   );
 }
+
+    

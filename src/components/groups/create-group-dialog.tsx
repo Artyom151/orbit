@@ -36,8 +36,23 @@ export function CreateGroupDialog({ children }: CreateGroupDialogProps) {
   const [bannerType, setBannerType] = useState('placeholder');
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const bannerInputRef = React.useRef<HTMLInputElement>(null);
+  const bannerVideoInputRef = React.useRef<HTMLInputElement>(null);
+  const [color1, setColor1] = useState('#a855f7');
+  const [color2, setColor2] = useState('#6366f1');
 
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleBannerImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+   const handleBannerVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -61,10 +76,10 @@ export function CreateGroupDialog({ children }: CreateGroupDialogProps) {
         let bannerUrl = '';
         switch(bannerType) {
             case 'gradient':
-                bannerUrl = 'default_gradient';
+                bannerUrl = JSON.stringify([color1, color2]);
                 break;
-            case 'custom':
-                // In a real app, upload bannerPreview to storage and get URL
+            case 'custom_image':
+            case 'custom_video':
                 bannerUrl = bannerPreview || `https://picsum.photos/seed/${newGroupRef.key}/800/200`;
                 break;
             case 'placeholder':
@@ -137,7 +152,7 @@ export function CreateGroupDialog({ children }: CreateGroupDialogProps) {
                 Banner
               </Label>
               <div className='col-span-3 space-y-4'>
-                <RadioGroup defaultValue="placeholder" className="flex gap-4" onValueChange={setBannerType}>
+                <RadioGroup defaultValue="placeholder" className="flex flex-wrap gap-4" onValueChange={(value) => { setBannerType(value); setBannerPreview(null); }}>
                   <div className="flex items-center space-x-2">
                       <RadioGroupItem value="placeholder" id="r1" />
                       <Label htmlFor="r1">Placeholder</Label>
@@ -147,15 +162,33 @@ export function CreateGroupDialog({ children }: CreateGroupDialogProps) {
                       <Label htmlFor="r2">Gradient</Label>
                   </div>
                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="custom" id="r3" />
-                      <Label htmlFor="r3">Custom</Label>
+                      <RadioGroupItem value="custom_image" id="r3" />
+                      <Label htmlFor="r3">Image</Label>
+                  </div>
+                   <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="custom_video" id="r4" />
+                      <Label htmlFor="r4">Video</Label>
                   </div>
                 </RadioGroup>
-                {bannerType === 'custom' && (
+
+                {bannerType === 'gradient' && (
+                    <div className='flex items-center gap-2'>
+                        <Input type="color" value={color1} onChange={(e) => setColor1(e.target.value)} />
+                        <Input type="color" value={color2} onChange={(e) => setColor2(e.target.value)} />
+                    </div>
+                )}
+                {bannerType === 'custom_image' && (
                     <div>
-                        <Input type="file" accept="image/*" className='hidden' ref={bannerInputRef} onChange={handleBannerChange} />
+                        <Input type="file" accept="image/*" className='hidden' ref={bannerInputRef} onChange={handleBannerImageChange} />
                         <Button type="button" variant="outline" onClick={() => bannerInputRef.current?.click()}>Upload Image</Button>
                         {bannerPreview && <Image src={bannerPreview} alt="Banner preview" width={400} height={100} className="rounded-md object-cover mt-2" />}
+                    </div>
+                )}
+                {bannerType === 'custom_video' && (
+                    <div>
+                        <Input type="file" accept="video/*" className='hidden' ref={bannerVideoInputRef} onChange={handleBannerVideoChange} />
+                        <Button type="button" variant="outline" onClick={() => bannerVideoInputRef.current?.click()}>Upload Video</Button>
+                        {bannerPreview && <video src={bannerPreview} muted loop autoPlay className="rounded-md object-cover mt-2 w-full h-auto max-h-28" />}
                     </div>
                 )}
               </div>

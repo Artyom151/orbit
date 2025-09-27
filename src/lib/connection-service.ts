@@ -1,5 +1,6 @@
 
 import { Database, ref, remove, serverTimestamp, set } from "firebase/database";
+import { createNotification } from "./notification-service";
 
 export const sendConnectionRequest = async (db: Database, currentUserId: string, otherUserId: string) => {
     // We create a pending request in our list, so we know we sent it.
@@ -11,13 +12,23 @@ export const sendConnectionRequest = async (db: Database, currentUserId: string,
     await set(theirConnectionRef, { status: 'pending', createdAt: serverTimestamp() });
 }
 
-export const acceptConnection = async (db: Database, currentUserId: string, otherUserId: string) => {
+export const acceptConnection = async (db: Database, currentUserId: string, otherUserId: string, currentUserData: {uid: string; displayName?: string | null; photoURL?: string | null, username?: string | undefined}) => {
     const myConnectionRef = ref(db, `connections/${currentUserId}/${otherUserId}`);
     const theirConnectionRef = ref(db, `connections/${otherUserId}/${currentUserId}`);
     
     // Update both records to 'accepted'
     await set(myConnectionRef, { status: 'accepted', createdAt: serverTimestamp() });
     await set(theirConnectionRef, { status: 'accepted', createdAt: serverTimestamp() });
+
+    // Send notification to the user who sent the request
+    await createNotification(db, {
+        recipientId: otherUserId,
+        senderId: currentUserId,
+        senderName: currentUserData.displayName || 'Someone',
+        senderAvatar: currentUserData.photoURL || '',
+        senderUsername: currentUserData.username || '',
+        type: 'follow', // Using 'follow' as a proxy for accepted connection
+    });
 };
 
 export const removeConnection = async (db: Database, currentUserId: string, otherUserId: string, areFriends: boolean) => {

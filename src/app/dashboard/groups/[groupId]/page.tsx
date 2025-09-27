@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useDatabase, useUser } from "@/firebase";
 import { useList } from "@/firebase/rtdb/use-list";
 import { useObject } from "@/firebase/rtdb/use-object";
@@ -68,6 +68,27 @@ export default function GroupPage({ params }: { params: { groupId: string } }) {
             .sort((a, b) => b.createdAt - a.createdAt);
 
     }, [postsData, usersData]);
+    
+    const [gradient, setGradient] = useState<string[] | undefined>();
+    const [videoBanner, setVideoBanner] = useState<string | undefined>();
+
+    useEffect(() => {
+        if (group?.bannerUrl) {
+            if (group.bannerUrl.startsWith('data:video')) {
+                setVideoBanner(group.bannerUrl);
+                setGradient(undefined);
+            } else if (group.bannerUrl.startsWith('["#')) {
+                 try {
+                    const colors = JSON.parse(group.bannerUrl);
+                    setGradient(colors);
+                    setVideoBanner(undefined);
+                } catch {}
+            } else {
+                 setVideoBanner(undefined);
+                 setGradient(undefined);
+            }
+        }
+    }, [group?.bannerUrl]);
 
     const handleToggleMembership = async () => {
         if (!db || !authUser || !group) return;
@@ -103,8 +124,8 @@ export default function GroupPage({ params }: { params: { groupId: string } }) {
             toast({ variant: 'destructive', title: 'Something went wrong' });
         }
     };
-
-    const isGradientBanner = group?.bannerUrl === 'default_gradient';
+    
+    const isImageBanner = group?.bannerUrl && group.bannerUrl.startsWith('https');
 
     return (
          <div>
@@ -125,10 +146,10 @@ export default function GroupPage({ params }: { params: { groupId: string } }) {
             
             {loadingGroup ? <div className="h-48 w-full bg-muted animate-pulse" /> : group && (
                  <div className="relative h-36 md:h-48 w-full bg-secondary">
-                    {isGradientBanner ? (
-                        <AnimatedBanner />
-                    ) : (
+                    {isImageBanner ? (
                         <Image src={group.bannerUrl || 'https://picsum.photos/seed/group-default/800/200'} alt={group.name || ""} fill className="object-cover" />
+                    ) : (
+                        <AnimatedBanner videoUrl={videoBanner} color={gradient} />
                     )}
                 </div>
             )}

@@ -9,10 +9,10 @@ import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { useUser, useDatabase } from "@/firebase";
-import { ref, update, onValue, remove, serverTimestamp, set } from "firebase/database";
+import { ref, update, onValue, remove, serverTimestamp, set, push } from "firebase/database";
 import React, { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import type { Post, User } from "@/lib/types";
+import type { Post, User, Comment } from "@/lib/types";
 import { CommentDialog } from "./comment-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -35,6 +35,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useMusicPlayer } from "@/context/music-player-context";
 import { ReportDialog } from "./report-dialog";
+import { createNotification } from "@/lib/notification-service";
+import { useList } from "@/firebase/rtdb/use-list";
+import { Textarea } from "./ui/textarea";
+import { Skeleton } from "./ui/skeleton";
 
 
 type PostCardProps = {
@@ -95,6 +99,121 @@ const PostContent = ({ post }: { post: Post & { user: User } }) => {
   );
 };
 
+const CommentSkeleton = () => (
+    <div className="flex items-start gap-3 pt-4">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="flex-1 space-y-2">
+            <Skeleton className="h-3 w-1/4" />
+            <Skeleton className="h-3 w-1/2" />
+        </div>
+    </div>
+);
+
+const PostComments = ({ post, onCommentCountChange }: { post: Post & { user: User }, onCommentCountChange: (newCount: number) => void }) => {
+    const { user: authUser } = useUser();
+    const db = useDatabase();
+    const [content, setContent] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+
+    const commentsQuery = useMemo(() => ref(db, `comments/${post.id}`), [db, post.id]);
+    const { data: commentsData, loading: loadingComments } = useList<Comment>(commentsQuery);
+    
+    const usersQuery = useMemo(() => ref(db, "users"), [db]);
+    const { data: usersData, loading: loadingUsers } = useList<User>(usersQuery);
+
+    const commentsWithUsers = useMemo(() => {
+        if (!commentsData || !usersData) return [];
+        const usersMap = new Map(usersData.map(u => [u.id, u]));
+        return commentsData
+            .map(comment => ({
+                ...comment,
+                user: usersMap.get(comment.userId)
+            }))
+            .filter(c => c.user)
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 2); 
+    }, [commentsData, usersData]);
+
+    const handleComment = async () => {
+        if (!content.trim() || !authUser || !db) return;
+        setIsSubmitting(true);
+        try {
+            const commentRef = push(ref(db, `comments/${post.id}`));
+            await set(commentRef, {
+                userId: authUser.uid,
+                postId: post.id,
+                content: content,
+                createdAt: serverTimestamp(),
+            });
+
+            const newCount = (post.commentCount || 0) + 1;
+            await update(ref(db, `posts/${post.id}`), { commentCount: newCount });
+            onCommentCountChange(newCount);
+
+            if (post.userId !== authUser.uid) {
+                await createNotification(db, {
+                    recipientId: post.userId,
+                    senderId: authUser.uid,
+                    senderName: authUser.displayName || 'Someone',
+                    senderAvatar: authUser.photoURL || '',
+                    senderUsername: authUser.username || '',
+                    type: 'comment',
+                    postId: post.id,
+                });
+            }
+            setContent("");
+            toast({ title: "Reply sent!" });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Could not post your reply." });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="pt-4 border-t border-border mt-2 space-y-4">
+            <div className="flex items-start gap-3">
+                <Avatar className="h-8 w-8 border-none">
+                    <AvatarImage src={authUser?.photoURL || ''} />
+                    <AvatarFallback>{authUser?.displayName?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="w-full">
+                    <Textarea 
+                        placeholder="Post your reply..." 
+                        className="bg-secondary border-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 min-h-[38px] text-sm"
+                        value={content}
+                        onChange={e => setContent(e.target.value)}
+                    />
+                    {content && (
+                        <div className="mt-2 flex justify-end">
+                            <Button size="sm" onClick={handleComment} disabled={isSubmitting}>
+                                {isSubmitting ? 'Replying...' : 'Reply'}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {loadingComments || loadingUsers ? (
+                <CommentSkeleton />
+            ) : commentsWithUsers.reverse().map(comment => (
+                <div key={comment.id} className="flex items-start gap-3 pt-2">
+                    <Avatar className="h-8 w-8 border-none">
+                        <AvatarImage src={comment.user?.avatar} />
+                        <AvatarFallback>{comment.user?.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-sm bg-secondary rounded-lg px-3 py-2 w-full">
+                        <Link href={`/dashboard/profile/${comment.user?.username}`} className="font-bold hover:underline">{comment.user?.name}</Link>
+                        <p className="whitespace-pre-wrap">{comment.content}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+
 export function PostCard({ post }: PostCardProps) {
   const { user: authUser } = useUser();
   const db = useDatabase();
@@ -107,6 +226,7 @@ export function PostCard({ post }: PostCardProps) {
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -147,6 +267,18 @@ export function PostCard({ post }: PostCardProps) {
     updates[`posts/${post.id}/likes/${authUser.uid}`] = isLiked ? null : true;
     
     await update(ref(db), updates);
+    
+    if (!isLiked && post.userId !== authUser.uid) {
+       await createNotification(db, {
+          recipientId: post.userId,
+          senderId: authUser.uid,
+          senderName: authUser.displayName || 'Someone',
+          senderAvatar: authUser.photoURL || '',
+          senderUsername: authUser.username || '',
+          type: 'like',
+          postId: post.id,
+       });
+    }
   };
   
   const handleRepost = async () => {
@@ -158,6 +290,18 @@ export function PostCard({ post }: PostCardProps) {
     updates[`posts/${post.id}/reposts/${authUser.uid}`] = isReposted ? null : true;
     
     await update(ref(db), updates);
+
+    if (!isReposted && post.userId !== authUser.uid) {
+       await createNotification(db, {
+          recipientId: post.userId,
+          senderId: authUser.uid,
+          senderName: authUser.displayName || 'Someone',
+          senderAvatar: authUser.photoURL || '',
+          senderUsername: authUser.username || '',
+          type: 'repost',
+          postId: post.id,
+       });
+    }
   }
   
   const handleBookmark = async () => {
@@ -221,7 +365,7 @@ export function PostCard({ post }: PostCardProps) {
         const updates: { [key: string]: any } = {};
         updates[`/posts/${post.id}`] = null;
         updates[`/comments/${post.id}`] = null;
-
+        // Should also delete notifications and bookmarks related to this post, but skipping for simplicity
         await update(ref(db), updates);
 
         toast({
@@ -319,7 +463,7 @@ export function PostCard({ post }: PostCardProps) {
            <PostContent post={post}/>
 
           <div className="flex justify-between items-center pt-2 max-w-sm">
-              <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors" onClick={() => setIsCommentDialogOpen(true)}>
+              <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors" onClick={() => setShowComments(!showComments)}>
                 <MessageCircle className="size-5" />
                 <span>{commentCount}</span>
               </Button>
@@ -364,6 +508,7 @@ export function PostCard({ post }: PostCardProps) {
                 </Button>
               </div>
         </div>
+        {showComments && <PostComments post={post} onCommentCountChange={setCommentCount} />}
         </div>
       </div>
     </Card>

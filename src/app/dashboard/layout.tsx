@@ -1,27 +1,39 @@
 
+
 'use client';
 
-import { Bell, Bookmark, Compass, Home, Mail, MoreHorizontal, User, PanelLeftClose, PanelLeftOpen, Music, Library, Loader2, Moon, Sun, Menu, Users, Newspaper, Shield } from "lucide-react";
+import { Bell, Bookmark, Compass, Home, Mail, MoreHorizontal, User, PanelLeftClose, PanelLeftOpen, Music, Library, Loader2, Moon, Sun, Menu, Users, Newspaper, Shield, Smile, Feather } from "lucide-react";
 import Link from "next/link";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-provider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
-import { useUser, useDatabase } from "@/firebase";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useUser, useDatabase, useList } from "@/firebase";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { signOut } from "@/lib/auth-service";
 import { Logo } from "@/components/logo";
 import { MusicPlayer } from "@/components/music-player";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { onValue, ref, serverTimestamp, set, onDisconnect } from "firebase/database";
+import { onValue, ref, serverTimestamp, set, onDisconnect, query, orderByChild, equalTo } from "firebase/database";
+import type { Notification } from "@/lib/types";
+import { SetStatusDialog } from "@/components/set-status-dialog";
 
 
 function MobileSidebar() {
   const { user } = useUser();
+  const db = useDatabase();
   const [isOpen, setIsOpen] = useState(false);
+
+  const notificationsQuery = useMemo(() => {
+      if (!user || !db) return null;
+      return query(ref(db, `notifications/${user.uid}`), orderByChild('read'), equalTo(false));
+  }, [user, db]);
+
+  const { data: unreadNotifications } = useList<Notification>(notificationsQuery);
+  const hasUnreadNotifications = unreadNotifications.length > 0;
 
   const handleLogout = async () => {
     await signOut();
@@ -65,7 +77,10 @@ function MobileSidebar() {
               <span>Explore</span>
           </NavLink>
           <NavLink href="/dashboard/notifications">
-              <Bell className="size-6 shrink-0" />
+              <div className="relative">
+                <Bell className="size-6 shrink-0" />
+                {hasUnreadNotifications && <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />}
+              </div>
               <span>Notifications</span>
           </NavLink>
           <NavLink href="/dashboard/messages">
@@ -80,6 +95,10 @@ function MobileSidebar() {
               <Newspaper className="size-6 shrink-0" />
               <span>Groups</span>
           </NavLink>
+          <NavLink href="/dashboard/articles">
+              <Feather className="size-6 shrink-0" />
+              <span>Articles</span>
+          </NavLink>
           <NavLink href="/dashboard/music">
               <Music className="size-6 shrink-0" />
               <span>Music</span>
@@ -88,12 +107,10 @@ function MobileSidebar() {
               <Bookmark className="size-6 shrink-0" />
               <span>Bookmarks</span>
           </NavLink>
-          {isModerator && (
-            <NavLink href="/dashboard/moderation">
-                <Shield className="size-6 shrink-0" />
-                <span>Moderation</span>
-            </NavLink>
-          )}
+          <NavLink href="/dashboard/moderation">
+              <Shield className="size-6 shrink-0" />
+              <span>Moderation</span>
+          </NavLink>
           <NavLink href={`/dashboard/profile/${username}`}>
               <User className="size-6 shrink-0" />
               <span>Profile</span>
@@ -122,6 +139,13 @@ function MobileSidebar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+                <SetStatusDialog>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <Smile className="mr-2" />
+                        Set status
+                    </DropdownMenuItem>
+                </SetStatusDialog>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem>
                     Add an existing account
                 </DropdownMenuItem>
@@ -142,7 +166,16 @@ function MobileSidebar() {
 function DashboardSidebar() {
   const { isLeftSidebarCollapsed, toggleLeftSidebar } = useSidebar();
   const { user } = useUser();
+  const db = useDatabase();
   
+  const notificationsQuery = useMemo(() => {
+      if (!user || !db) return null;
+      return query(ref(db, `notifications/${user.uid}`), orderByChild('read'), equalTo(false));
+  }, [user, db]);
+
+  const { data: unreadNotifications } = useList<Notification>(notificationsQuery);
+  const hasUnreadNotifications = unreadNotifications.length > 0;
+
   const handleLogout = async () => {
     await signOut();
   };
@@ -153,7 +186,6 @@ function DashboardSidebar() {
   
   const userInitial = user.displayName?.charAt(0) || "?";
   const username = user.username || user.email?.split('@')[0] || "user";
-  const isModerator = user.role === 'moderator' || user.role === 'developer';
 
   return (
     <aside className={cn(
@@ -189,7 +221,10 @@ function DashboardSidebar() {
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
               isLeftSidebarCollapsed && "justify-center"
             )}>
-                <Bell className="size-6 shrink-0" />
+                <div className="relative">
+                  <Bell className="size-6 shrink-0" />
+                  {hasUnreadNotifications && <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />}
+                </div>
                 {!isLeftSidebarCollapsed && <span>Notifications</span>}
             </Link>
             <Link href="/dashboard/messages" className={cn(
@@ -213,6 +248,13 @@ function DashboardSidebar() {
                 <Newspaper className="size-6 shrink-0" />
                 {!isLeftSidebarCollapsed && <span>Groups</span>}
             </Link>
+             <Link href="/dashboard/articles" className={cn(
+              "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
+              isLeftSidebarCollapsed && "justify-center"
+            )}>
+                <Feather className="size-6 shrink-0" />
+                {!isLeftSidebarCollapsed && <span>Articles</span>}
+            </Link>
              <Link href="/dashboard/music" className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
               isLeftSidebarCollapsed && "justify-center"
@@ -227,16 +269,14 @@ function DashboardSidebar() {
                 <Bookmark className="size-6 shrink-0" />
                 {!isLeftSidebarCollapsed && <span>Bookmarks</span>}
             </Link>
-             {isModerator && (
-                <Link href="/dashboard/moderation" className={cn(
-                "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
-                isLeftSidebarCollapsed && "justify-center"
-                )}>
-                    <Shield className="size-6 shrink-0" />
-                    {!isLeftSidebarCollapsed && <span>Moderation</span>}
-                </Link>
-            )}
-             <Link href={`/dashboard/profile/${username}`} className={cn(
+            <Link href="/dashboard/moderation" className={cn(
+              "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
+              isLeftSidebarCollapsed && "justify-center"
+            )}>
+                <Shield className="size-6 shrink-0" />
+                {!isLeftSidebarCollapsed && <span>Moderation</span>}
+            </Link>
+            <Link href={`/dashboard/profile/${username}`} className={cn(
               "flex items-center gap-4 p-3 rounded-full hover:bg-secondary transition-colors",
               isLeftSidebarCollapsed && "justify-center"
             )}>
@@ -290,6 +330,13 @@ function DashboardSidebar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+                <SetStatusDialog>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <Smile className="mr-2" />
+                        Set status
+                    </DropdownMenuItem>
+                </SetStatusDialog>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem>
                     Add an existing account
                 </DropdownMenuItem>
@@ -311,6 +358,7 @@ const PAGE_TITLES: { [key: string]: string } = {
   '/dashboard/messages': 'Messages',
   '/dashboard/connections': 'Connections',
   '/dashboard/groups': 'Groups',
+  '/dashboard/articles': 'Articles',
   '/dashboard/music': 'Music',
   '/dashboard/bookmarks': 'Bookmarks',
   '/dashboard/moderation': 'Moderation',

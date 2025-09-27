@@ -10,7 +10,7 @@ import { ref, push, set, serverTimestamp, update, remove } from "firebase/databa
 import { formatDistanceToNow } from "date-fns";
 import React, { useMemo, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { Post, Comment, User } from "@/lib/types";
+import type { Post, Comment, User, Notification } from "@/lib/types";
 import { useList } from "@/firebase/rtdb/use-list";
 import { Card } from "./ui/card";
 import Link from "next/link";
@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { createNotification } from "@/lib/notification-service";
 
 type CommentDialogProps = {
     open: boolean;
@@ -91,6 +92,19 @@ export function CommentDialog({ open, onOpenChange, post }: CommentDialogProps) 
             const updates: { [key: string]: any } = {};
             updates[`commentCount`] = (post.commentCount || 0) + 1;
             await update(postRef, updates);
+
+            // Create notification
+            if (post.userId !== authUser.uid) {
+                await createNotification(db, {
+                    recipientId: post.userId,
+                    senderId: authUser.uid,
+                    senderName: authUser.displayName || 'Someone',
+                    senderAvatar: authUser.photoURL || '',
+                    senderUsername: authUser.username || '',
+                    type: 'comment',
+                    postId: post.id,
+                });
+            }
 
             setContent("");
             toast({

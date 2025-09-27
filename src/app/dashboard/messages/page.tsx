@@ -20,6 +20,7 @@ import { formatDistanceToNow } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useObject } from "@/firebase/rtdb/use-object";
 
 
 type UserDoc = UserType;
@@ -72,6 +73,7 @@ const AudioPlayer = ({ src }: { src: string }) => {
     }, []);
 
     const formatTime = (seconds: number) => {
+        if (isNaN(seconds) || seconds === Infinity) return "0:00";
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
@@ -188,6 +190,21 @@ export default function MessagesPage() {
         setIsReceivingCall(false);
     }
     
+    const activeCallRef = useMemo(() => {
+        if (!db || !activeCall) return null;
+        return ref(db, `calls/${activeCall.id}`);
+    }, [db, activeCall]);
+    
+    const { data: activeCallData } = useObject<CallType>(activeCallRef);
+    
+    useEffect(() => {
+        if (activeCallData && (activeCallData.status === 'ended' || activeCallData.status === 'declined')) {
+            handleEndCall();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeCallData]);
+
+
     const handleEndCall = () => {
         if (db && activeCall) {
             endCall(db, activeCall.id);
@@ -323,6 +340,27 @@ export default function MessagesPage() {
         await remove(messageRef);
         toast({ title: 'Message deleted' });
     };
+    
+    const handleDeleteConversation = async (conversationId: string) => {
+        if (!db) return;
+
+        const conversationRef = ref(db, `conversations/${conversationId}`);
+        const messagesRef = ref(db, `messages/${conversationId}`);
+
+        try {
+            await remove(conversationRef);
+            await remove(messagesRef);
+            
+            toast({ title: "Conversation deleted" });
+            
+            if (selectedConversation?.id === conversationId) {
+                setSelectedConversation(null);
+            }
+        } catch (error) {
+            console.error("Error deleting conversation:", error);
+            toast({ variant: 'destructive', title: "Could not delete conversation" });
+        }
+    };
 
     const handleStartEditing = (message: MessageType) => {
         setEditingMessage(message);
@@ -358,7 +396,7 @@ export default function MessagesPage() {
     />
     <div className={cn(
         "grid lg:grid-cols-[350px_1fr] h-[calc(100vh-65px)] lg:h-screen",
-        currentTrack && "pb-24 lg:pb-0" // Adjust padding for music player
+        currentTrack && "pb-[76px] lg:pb-0" // Adjust padding for music player
     )}>
         <div className={cn(
             "border-r border-border flex-col h-full",
@@ -380,24 +418,52 @@ export default function MessagesPage() {
             <div className="flex-1 overflow-y-auto">
                 {loadingConversations && <p className="p-4 text-center text-muted-foreground">Loading conversations...</p>}
                 {!loadingConversations && conversationsWithData.map((conv) => (
-                    <button key={conv.id} onClick={() => handleSelectConversation(conv)} className="w-full text-left">
-                        <div className={cn(
-                            "flex items-start gap-3 p-4 border-b border-border hover:bg-secondary",
+                    <div
+                        key={conv.id} 
+                        className={cn(
+                            "flex items-start gap-3 p-4 border-b border-border hover:bg-secondary group relative",
                             selectedConversation?.id === conv.id && "bg-secondary"
-                        )}>
-                            <Avatar className="h-12 w-12 border-none">
-                                <AvatarImage src={conv.otherUser?.avatar} />
-                                <AvatarFallback>{conv.otherUser?.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                                <div className="flex justify-between">
-                                    <p className="font-bold">{conv.otherUser?.name}</p>
-                                </div>
-                                <p className="text-sm text-muted-foreground truncate">
-                                </p>
+                        )}
+                        onClick={() => handleSelectConversation(conv)}
+                    >
+                        <Avatar className="h-12 w-12 border-none">
+                            <AvatarImage src={conv.otherUser?.avatar} />
+                            <AvatarFallback>{conv.otherUser?.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex justify-between">
+                                <p className="font-bold">{conv.otherUser?.name}</p>
                             </div>
+                            <p className="text-sm text-muted-foreground truncate">
+                            </p>
                         </div>
-                    </button>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                    <MoreVertical className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                            <Trash2 className="mr-2 size-4"/> Delete Conversation
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will permanently delete all messages in this conversation. This action cannot be undone.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteConversation(conv.id)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 ))}
                  {!loadingConversations && conversationsWithData.length === 0 && (
                     <p className="text-center text-muted-foreground py-8">No conversations yet.</p>

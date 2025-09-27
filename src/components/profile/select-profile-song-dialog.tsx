@@ -17,7 +17,7 @@ import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
-type AttachMusicDialogProps = {
+type SelectProfileSongDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectTrack: (track: Track) => void;
@@ -34,7 +34,7 @@ const TrackSkeleton = () => (
 );
 
 
-export function AttachMusicDialog({ open, onOpenChange, onSelectTrack }: AttachMusicDialogProps) {
+export function SelectProfileSongDialog({ open, onOpenChange, onSelectTrack }: SelectProfileSongDialogProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +61,7 @@ export function AttachMusicDialog({ open, onOpenChange, onSelectTrack }: AttachM
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle>Attach Music</DialogTitle>
+          <DialogTitle>Select Profile Song</DialogTitle>
         </DialogHeader>
         <div className="p-4 pt-0 border-b">
            <div className="relative">

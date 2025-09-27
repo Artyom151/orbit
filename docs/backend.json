@@ -37,6 +37,22 @@
             "type": "string",
             "description": "The role of the user in the application",
             "enum": ["user", "moderator", "developer"]
+        },
+        "profileSong": {
+            "type": "object",
+            "description": "A music track attached to the user's profile",
+             "properties": {
+                "trackId": { "type": "number" },
+                "artistName": { "type": "string" },
+                "trackName": { "type": "string" },
+                "previewUrl": { "type": "string", "format": "uri" },
+                "artworkUrl100": { "type": "string", "format": "uri" }
+            }
+        },
+        "profileBorder": {
+            "type": "string",
+            "description": "The selected decorative border for the user's avatar",
+            "enum": ["none", "rainbow", "gold", "neon"]
         }
       },
       "required": ["name", "email", "username"]
@@ -97,6 +113,19 @@
             }
         },
         "required": ["userId", "createdAt"]
+    },
+    "article": {
+      "title": "Article",
+      "description": "A long-form blog article created by a user.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "authorId": { "type": "string" },
+        "coverImage": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "authorId", "createdAt"]
     },
     "like": {
         "title": "Like",
@@ -268,7 +297,7 @@
     },
     "status": {
       "title": "User Status",
-      "description": "Tracks the online/offline status of a user.",
+      "description": "Tracks the online/offline status and custom status of a user.",
       "type": "object",
       "properties": {
         "state": {
@@ -278,6 +307,14 @@
         "last_changed": {
           "type": "number",
           "description": "Timestamp of the last status change."
+        },
+        "customStatus": {
+            "type": "string",
+            "description": "A custom status message set by the user."
+        },
+        "emoji": {
+            "type": "string",
+            "description": "An emoji to go with the custom status."
         }
       },
       "required": ["state", "last_changed"]
@@ -345,6 +382,35 @@
             }
         },
         "required": ["postId", "reportedBy", "createdAt"]
+    },
+    "notification": {
+        "title": "Notification",
+        "description": "A notification for a user about an event.",
+        "type": "object",
+        "properties": {
+            "recipientId": { "type": "string" },
+            "senderId": { "type": "string" },
+            "senderName": { "type": "string" },
+            "senderAvatar": { "type": "string", "format": "uri" },
+            "senderUsername": { "type": "string" },
+            "type": {
+                "type": "string",
+                "enum": ["like", "comment", "repost", "follow"]
+            },
+            "postId": {
+                "type": "string",
+                "description": "The ID of the relevant post, if applicable."
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "read": {
+                "type": "boolean",
+                "default": false
+            }
+        },
+        "required": ["recipientId", "senderId", "senderName", "senderAvatar", "type", "createdAt", "read"]
     }
   },
   "auth": {
@@ -363,6 +429,12 @@
         },
         "description": "Stores all posts created by users."
     },
+     "/articles/{articleId}": {
+        "schema": {
+            "$ref": "#/entities/article"
+        },
+        "description": "Stores all long-form articles created by users."
+    },
     "/posts/{postId}/likes/{userId}": {
         "schema": {
             "$ref": "#/entities/like"
@@ -375,7 +447,7 @@
       },
       "description": "Stores a user's bookmarked posts."
     },
-    "/posts/{postId}/comments/{commentId}": {
+    "/comments/{postId}/{commentId}": {
       "schema": {
         "$ref": "#/entities/comment"
       },
@@ -452,6 +524,12 @@
             "$ref": "#/entities/report"
         },
         "description": "Stores all user-submitted reports on posts."
+    },
+    "/notifications/{userId}/{notificationId}": {
+        "schema": {
+            "$ref": "#/entities/notification"
+        },
+        "description": "Stores notifications for each user."
     }
   }
 }

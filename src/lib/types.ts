@@ -1,5 +1,8 @@
 
 
+
+
+
 export type User = {
   id: string;
   name: string;
@@ -9,6 +12,8 @@ export type User = {
   coverPhoto: string;
   bio: string;
   role?: 'user' | 'moderator' | 'developer';
+  profileSong?: Track;
+  profileBorder?: 'none' | 'rainbow' | 'gold' | 'neon' | 'custom' | { gradient: [string, string], glow: string };
 };
 
 export type Post = {
@@ -16,13 +21,7 @@ export type Post = {
   userId: string;
   content: string;
   image?: string;
-  track?: {
-    trackId: number;
-    artistName: string;
-    trackName: string;
-    previewUrl: string;
-    artworkUrl100: string;
-  };
+  track?: Track;
   likeCount: number;
   commentCount: number;
   repostCount: number;
@@ -30,6 +29,17 @@ export type Post = {
   likes?: Record<string, boolean>;
   groupId?: string;
 };
+
+export type Article = {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  coverImage?: string;
+  createdAt: number;
+  author?: User; // Populated client-side
+};
+
 
 export type Message = {
   id: string;
@@ -56,14 +66,17 @@ export type Bookmark = {
     bookmarkedAt: number;
 }
 
-export type FavoriteTrack = {
+export type Track = {
+    trackId: number;
+    artistName: string;
+    trackName: string;
+    previewUrl: string;
+    artworkUrl100: string;
+};
+
+export type FavoriteTrack = Track & {
   id: string; // Will be the trackId
   userId: string;
-  trackId: number;
-  artistName: string;
-  trackName: string;
-  previewUrl: string;
-  artworkUrl100: string;
   favoritedAt: number;
 };
 
@@ -122,6 +135,25 @@ export type Report = {
   createdAt: number;
   post?: Post & { user: User }; // Populated client-side
 }
-    
 
+export type Notification = {
+    id: string;
+    recipientId: string;
+    senderId: string;
+    senderName: string;
+    senderAvatar: string;
+    senderUsername: string;
+    type: 'like' | 'comment' | 'repost' | 'follow';
+    postId?: string;
+    createdAt: number;
+    read: boolean;
+};
+    
+export type Status = {
+  id: string;
+  state: 'online' | 'offline';
+  last_changed: number;
+  customStatus?: string;
+  emoji?: string;
+};
     

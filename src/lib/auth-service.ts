@@ -1,4 +1,5 @@
 
+
 'use client';
 import {
   getAuth,
@@ -9,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { app, db } from '@/firebase/config';
 import { ref, set, get, serverTimestamp, update } from "firebase/database";
+import type { Track } from './types';
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
@@ -69,7 +71,7 @@ export async function signOut() {
   }
 }
 
-export async function updateUserProfile(userId: string, data: Partial<{ name: string; username: string; bio: string; avatar: string; coverPhoto: string; onboardingCompleted: boolean; role: 'user' | 'moderator' | 'developer' }>) {
+export async function updateUserProfile(userId: string, data: Partial<{ name: string; username: string; bio: string; avatar: string; coverPhoto: string; onboardingCompleted: boolean; role: 'user' | 'moderator' | 'developer', profileSong: Track | null, profileBorder: any }>) {
     if(!db) throw new Error("Database not connected");
 
     const userRef = ref(db, 'users/' + userId);

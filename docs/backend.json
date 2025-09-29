@@ -1,0 +1,556 @@
+
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address"
+        },
+        "avatar": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the user's avatar image"
+        },
+        "username": {
+            "type": "string",
+            "description": "The user's unique username"
+        },
+        "bio": {
+            "type": "string",
+            "description": "A short user bio"
+        },
+        "coverPhoto": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the user's cover photo"
+        },
+        "profileBackground": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the user's profile background media (image, gif, or video)"
+        },
+        "role": {
+            "type": "string",
+            "description": "The role of the user in the application",
+            "enum": ["user", "moderator", "developer"]
+        },
+        "profileSong": {
+            "type": "object",
+            "description": "A music track attached to the user's profile",
+             "properties": {
+                "trackId": { "type": "number" },
+                "artistName": { "type": "string" },
+                "trackName": { "type": "string" },
+                "previewUrl": { "type": "string", "format": "uri" },
+                "artworkUrl100": { "type": "string", "format": "uri" }
+            }
+        },
+        "storyBorder": {
+            "type": "string",
+            "description": "The selected decorative border for the user's story ring",
+            "enum": ["none", "rainbow", "gold", "neon"]
+        },
+        "profileTheme": {
+            "type": "string",
+            "description": "The selected visual theme for the user's profile page",
+            "enum": ["default", "ocean", "sunset", "forest"]
+        },
+        "pinnedPostId": {
+            "type": "string",
+            "description": "The ID of the post pinned to the user's profile"
+        }
+      },
+      "required": ["name", "email", "username"]
+    },
+    "post": {
+        "title": "Post",
+        "description": "A post created by a user",
+        "type": "object",
+        "properties": {
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who created the post"
+            },
+            "groupId": {
+                "type": "string",
+                "description": "The ID of the group this post belongs to, if any."
+            },
+            "content": {
+                "type": "string",
+                "description": "The text content of the post"
+            },
+            "media": {
+                "type": "array",
+                "description": "An array of media items (images or videos) attached to the post",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "src": { "type": "string", "format": "uri" },
+                        "type": { "type": "string", "enum": ["image", "video"] }
+                    },
+                    "required": ["src", "type"]
+                }
+            },
+            "track": {
+                "type": "object",
+                "description": "A music track attached to the post",
+                "properties": {
+                    "trackId": { "type": "number" },
+                    "artistName": { "type": "string" },
+                    "trackName": { "type": "string" },
+                    "previewUrl": { "type": "string", "format": "uri" },
+                    "artworkUrl100": { "type": "string", "format": "uri" }
+                }
+            },
+            "likeCount": {
+                "type": "number",
+                "description": "Number of likes the post has received"
+            },
+            "commentCount": {
+                "type": "number",
+                "description": "Number of comments on the post"
+            },
+            "repostCount": {
+                "type": "number",
+                "description": "Number of times the post has been reposted"
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the post was created"
+            },
+            "originalPostId": {
+                "type": "string",
+                "description": "If this is a repost, the ID of the original post"
+            }
+        },
+        "required": ["userId", "createdAt"]
+    },
+    "article": {
+      "title": "Article",
+      "description": "A long-form blog article created by a user.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "authorId": { "type": "string" },
+        "coverImage": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "authorId", "createdAt"]
+    },
+    "like": {
+        "title": "Like",
+        "description": "A record of a user liking a post",
+        "type": "object",
+        "properties": {
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who liked the post"
+            },
+            "postId": {
+                "type": "string",
+                "description": "The ID of the post that was liked"
+            }
+        },
+        "required": ["userId", "postId"]
+    },
+    "bookmark": {
+        "title": "Bookmark",
+        "description": "A record of a user bookmarking a post",
+        "type": "object",
+        "properties": {
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who bookmarked the post"
+            },
+            "postId": {
+                "type": "string",
+                "description": "The ID of the post that was bookmarked"
+            },
+            "bookmarkedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the post was bookmarked"
+            }
+        },
+        "required": ["userId", "postId", "bookmarkedAt"]
+    },
+    "comment": {
+        "title": "Comment",
+        "description": "A comment on a post",
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The ID of the user who made the comment"
+          },
+          "postId": {
+            "type": "string",
+            "description": "The ID of the post being commented on"
+          },
+          "content": {
+            "type": "string",
+            "description": "The text content of the comment"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the comment was created"
+          }
+        },
+        "required": ["userId", "postId", "content", "createdAt"]
+    },
+    "message": {
+        "title": "Message",
+        "description": "A single message within a conversation",
+        "type": "object",
+        "properties": {
+            "senderId": {
+                "type": "string",
+                "description": "The ID of the user who sent the message"
+            },
+            "text": {
+                "type": "string",
+                "description": "The content of the message"
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the message was sent"
+            }
+        },
+        "required": ["senderId", "text", "timestamp"]
+    },
+    "favoriteTrack": {
+      "title": "Favorite Track",
+      "description": "A record of a user favoriting a music track",
+      "type": "object",
+      "properties": {
+          "userId": { "type": "string" },
+          "trackId": { "type": "number" },
+          "artistName": { "type": "string" },
+          "trackName": { "type": "string" },
+          "previewUrl": { "type": "string", "format": "uri" },
+          "artworkUrl100": { "type": "string", "format": "uri" },
+          "favoritedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "trackId", "trackName", "artistName", "favoritedAt"]
+    },
+    "playlist": {
+      "title": "Playlist",
+      "description": "A user-created playlist of music tracks",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "trackCount": { "type": "number", "description": "Number of tracks in the playlist"}
+      },
+      "required": ["userId", "name", "createdAt"]
+    },
+    "playlistTrack": {
+        "title": "Playlist Track",
+        "description": "A track within a user-created playlist",
+        "type": "object",
+        "properties": {
+            "playlistId": { "type": "string" },
+            "userId": { "type": "string" },
+            "trackId": { "type": "number" },
+            "artistName": { "type": "string" },
+            "trackName": { "type": "string" },
+            "previewUrl": { "type": "string", "format": "uri" },
+            "artworkUrl100": { "type": "string", "format": "uri" },
+            "addedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["playlistId", "userId", "trackId", "trackName", "artistName", "addedAt"]
+    },
+    "connection": {
+        "title": "Connection",
+        "description": "Represents a connection (friendship) between two users.",
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": ["pending", "accepted"],
+                "description": "The status of the connection request."
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time"
+            }
+        },
+        "required": ["status", "createdAt"]
+    },
+    "group": {
+        "title": "Group",
+        "description": "A user-created group or community.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "bannerUrl": { "type": "string", "format": "uri" },
+            "createdBy": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "memberCount": { "type": "number" }
+        },
+        "required": ["name", "createdBy", "createdAt"]
+    },
+    "groupMember": {
+        "title": "Group Member",
+        "description": "A record of a user being a member of a group.",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "groupId": { "type": "string" },
+            "joinedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "groupId", "joinedAt"]
+    },
+    "status": {
+      "title": "User Status",
+      "description": "Tracks the online/offline status and custom status of a user.",
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["online", "offline"]
+        },
+        "last_changed": {
+          "type": "number",
+          "description": "Timestamp of the last status change."
+        },
+        "customStatus": {
+            "type": "string",
+            "description": "A custom status message set by the user."
+        },
+        "emoji": {
+            "type": "string",
+            "description": "An emoji to go with the custom status."
+        }
+      },
+      "required": ["state", "last_changed"]
+    },
+    "call": {
+      "title": "Call",
+      "description": "Represents a WebRTC call between two users.",
+      "type": "object",
+      "properties": {
+        "caller": {
+          "$ref": "#/entities/user"
+        },
+        "receiver": {
+          "$ref": "#/entities/user"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["audio", "video"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ringing", "active", "ended", "declined"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "offer": {
+            "type": "object",
+            "description": "WebRTC session description offer from the caller."
+        },
+        "answer": {
+            "type": "object",
+            "description": "WebRTC session description answer from the receiver."
+        }
+      },
+      "required": ["caller", "receiver", "type", "status", "createdAt"]
+    },
+    "iceCandidate": {
+      "title": "ICE Candidate",
+      "description": "A WebRTC ICE candidate for establishing a peer-to-peer connection.",
+      "type": "object",
+      "properties": {}
+    },
+    "report": {
+        "title": "Report",
+        "description": "A report on a post made by a user.",
+        "type": "object",
+        "properties": {
+            "postId": {
+                "type": "string",
+                "description": "The ID of the reported post."
+            },
+            "reportedBy": {
+                "type": "string",
+                "description": "The ID of the user who submitted the report."
+            },
+            "reason": {
+                "type": "string",
+                "description": "The reason for the report."
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time"
+            }
+        },
+        "required": ["postId", "reportedBy", "createdAt"]
+    },
+    "notification": {
+        "title": "Notification",
+        "description": "A notification for a user about an event.",
+        "type": "object",
+        "properties": {
+            "recipientId": { "type": "string" },
+            "senderId": { "type": "string" },
+            "senderName": { "type": "string" },
+            "senderAvatar": { "type": "string", "format": "uri" },
+            "senderUsername": { "type": "string" },
+            "type": {
+                "type": "string",
+                "enum": ["like", "comment", "repost", "follow"]
+            },
+            "postId": {
+                "type": "string",
+                "description": "The ID of the relevant post, if applicable."
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "read": {
+                "type": "boolean",
+                "default": false
+            }
+        },
+        "required": ["recipientId", "senderId", "senderName", "senderAvatar", "type", "createdAt", "read"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/user"
+      },
+      "description": "Stores user profile information."
+    },
+    "/posts/{postId}": {
+        "schema": {
+            "$ref": "#/entities/post"
+        },
+        "description": "Stores all posts created by users."
+    },
+     "/articles/{articleId}": {
+        "schema": {
+            "$ref": "#/entities/article"
+        },
+        "description": "Stores all long-form articles created by users."
+    },
+    "/posts/{postId}/likes/{userId}": {
+        "schema": {
+            "$ref": "#/entities/like"
+        },
+        "description": "Stores likes for a specific post. The document ID is the user ID."
+    },
+     "/bookmarks/{userId}/{postId}": {
+      "schema": {
+        "$ref": "#/entities/bookmark"
+      },
+      "description": "Stores a user's bookmarked posts."
+    },
+    "/comments/{postId}/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/comment"
+      },
+      "description": "Stores comments for a specific post."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+        "schema": {
+            "$ref": "#/entities/message"
+        },
+        "description": "Stores messages within a specific conversation."
+    },
+    "/favoriteTracks/{userId}/{trackId}": {
+      "schema": {
+        "$ref": "#/entities/favoriteTrack"
+      },
+      "description": "Stores a user's favorite music tracks."
+    },
+    "/playlists/{userId}/{playlistId}": {
+      "schema": {
+        "$ref": "#/entities/playlist"
+      },
+      "description": "Stores user-created playlists."
+    },
+    "/playlistTracks/{playlistId}/{trackId}": {
+        "schema": {
+            "$ref": "#/entities/playlistTrack"
+        },
+        "description": "Stores the tracks belonging to a specific playlist."
+    },
+    "/connections/{userId}/{otherUserId}": {
+        "schema": {
+            "$ref": "#/entities/connection"
+        },
+        "description": "Stores the connection status between two users."
+    },
+    "/groups/{groupId}": {
+        "schema": {
+            "$ref": "#/entities/group"
+        },
+        "description": "Stores all created groups."
+    },
+    "/groupMembers/{groupId}/{userId}": {
+        "schema": {
+            "$ref": "#/entities/groupMember"
+        },
+        "description": "Stores the members of a specific group."
+    },
+    "/status/{userId}": {
+      "schema": {
+        "$ref": "#/entities/status"
+      },
+      "description": "Tracks user online status for real-time presence."
+    },
+    "/calls/{callId}": {
+        "schema": {
+            "$ref": "#/entities/call"
+        },
+        "description": "Stores call signaling information between users."
+    },
+     "/calls/{callId}/offerCandidates/{candidateId}": {
+        "schema": {
+            "$ref": "#/entities/iceCandidate"
+        },
+        "description": "ICE candidates from the caller."
+    },
+    "/calls/{callId}/answerCandidates/{candidateId}": {
+        "schema": {
+            "$ref": "#/entities/iceCandidate"
+        },
+        "description": "ICE candidates from the receiver."
+    },
+    "/reports/{reportId}": {
+        "schema": {
+            "$ref": "#/entities/report"
+        },
+        "description": "Stores all user-submitted reports on posts."
+    },
+    "/notifications/{userId}/{notificationId}": {
+        "schema": {
+            "$ref": "#/entities/notification"
+        },
+        "description": "Stores notifications for each user."
+    }
+  }
+}
